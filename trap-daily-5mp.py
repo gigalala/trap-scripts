@@ -73,23 +73,22 @@ def take_pic():
 
 
 def send_pic():
-    body_headers = get_body_and_headers()
-    if not body_headers:
+    body, headers = get_body_and_headers()
+    if not body or not headers:
         return
     oldtime = time.time()
     result = wait_for_connectivity(oldtime)
     if not result:
-        return true
+        return True
     logging.info('connected to internet')
-    result = send_request(oldtime,body_headers.body,body_headers.headers)
+    result = send_request(oldtime, body, headers)
     if not result:
-        return true
+        return True
 
-    if res.status_code == 200:
+    if result.status_code == 200:
         logging.info("image sent")
     else:
-        logging.error("error, image did not sent - " + res.text)
-
+        logging.error("error, image did not sent - " + result.text)
 
 
 def get_body_and_headers():
@@ -105,7 +104,7 @@ def get_body_and_headers():
     if not token:
         logging.error("fatal error no token for pi")
         return
-    if test_mode == None:
+    if test_mode is None:
         logging.error("Trap is off, no test or production set")
         return
     logging.info('before open image')
@@ -115,17 +114,19 @@ def get_body_and_headers():
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode}
     headers = {"Authorization": "Bearer "+token}
-    reutrn(body,headers)
+    return body,headers
+
 
 def wait_for_connectivity(oldtime):
     time.sleep(CONNECTIVITY_SLEEP_TIME)
     while not connected_to_internet():
         time.sleep(CONNECTIVITY_SLEEP_TIME)
         if time.time() - oldtime > REBOOT_TIME:
-            return false
-    return true
+            return False
+    return True
 
-def send_request(oldtim,body,headers):
+
+def send_request(oldtime, body, headers):
     while True:
         try:
             logging.info('trying to send')
@@ -134,10 +135,11 @@ def send_request(oldtim,body,headers):
             logging.error(str(e))
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - oldtime > REBOOT_TIME:
-                return false
+                return False
         else:
             logging.info('request made')
             return res
+
 
 def main():
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
@@ -152,5 +154,6 @@ def main():
         logging.error(str(e))
     time.sleep(SLEEP_BEFORE_SHUTDOWN)
     system("shutdown now -h") 
+
 
 main()  

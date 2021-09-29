@@ -130,7 +130,7 @@ def send_request(oldtime, body, headers):
     while True:
         try:
             logging.info('trying to send')
-            res = requests.post(URL, data=body, headers=headers)
+            res = requests.post(URL, data=body, headers=headers,timeout=120)
         except Exception as e:
             logging.error(str(e))
             time.sleep(CONNECTIVITY_SLEEP_TIME)

@@ -24,6 +24,7 @@ boot_count = None
 startup_time = None
 run_time = None
 image_taken_today = None
+should_stay_on = False
 start_time = time.time()
 
 
@@ -132,14 +133,18 @@ def send_pic():
 
 
 def check_response_for_actions(data):
-    if data.action == "none":
+    global should_stay_on, run_time
+    if data['action'] == "none":
         logging.info("no response action was received")
-    elif data.action == "stayOn":
+    elif data['action'] == "stayOn":
         logging.info("stay on response action was received")
-    elif data.action == "changeBattery":
+        should_stay_on = stay_on()
+    elif data['action'] == "changeBattery":
         logging.info("change battery response action was received")
-    elif data.action == "update":
-        logging.info("change battery response action was received")
+        run_time = change_battery()
+    elif data['action'] == "update":
+        logging.info("update response action was received")
+        update(data['value'])
 
 
 def get_body_and_headers():
@@ -245,10 +250,15 @@ def main():
         startup_time == 0
         image_taken_today = False
         boot_count = 0
-    run_time = run_time + calc_run_time()
+    # check for battery change command
+    if run_time < 0:
+        run_time = 0
+    else:
+        run_time = run_time + calc_run_time()
     write_trap_boot_data()
-    time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    system("shutdown now -h")
+    if not should_stay_on:
+        time.sleep(SLEEP_BEFORE_SHUTDOWN)
+        system("shutdown now -h")
 
 
 if __name__ == "__main__":

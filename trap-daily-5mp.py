@@ -209,7 +209,7 @@ def set_startup_time():
 
 def run_reboot():
     logging.info('rebooting')
-    global boot_count, startup_time, image_taken_today
+    global boot_count, startup_time, image_taken_today, run_time
     boot_count = boot_count + 1
     run_time += run_time + calc_run_time()
     if boot_count == FAIL_REBOOT_ATTEMPTS:

@@ -4,12 +4,12 @@ import base64
 from datetime import datetime
 from os import path
 from os import system
+from response_actions import change_battery, stay_on, update
 # from picamera import PiCamera
 import time
 import logging
 import subprocess
 import json
-
 
 FAIL_REBOOT_ATTEMPTS = 3
 REBOOT_TIME = 600  # 10 min
@@ -126,8 +126,20 @@ def send_pic():
 
     if result.status_code == 200:
         logging.info("image sent")
+        data = result.json()
     else:
         logging.error("error, image did not sent - " + result.text)
+
+
+def check_response_for_actions(data):
+    if data.action == "none":
+        logging.info("no response action was received")
+    elif data.action == "stayOn":
+        logging.info("stay on response action was received")
+    elif data.action == "changeBattery":
+        logging.info("change battery response action was received")
+    elif data.action == "update":
+        logging.info("change battery response action was received")
 
 
 def get_body_and_headers():
@@ -151,7 +163,9 @@ def get_body_and_headers():
         encoded_string = base64.b64encode(image_file.read())
     logging.info('get time')
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
-    body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode}
+    number_of_boots = startup_time * FAIL_REBOOT_ATTEMPTS + boot_count
+    body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
+            'runTime': run_time + calc_run_time(), 'numberOfBoots': number_of_boots}
     headers = {"Authorization": "Bearer " + token}
     return body, headers
 
@@ -181,10 +195,10 @@ def send_request(old_time, body, headers):
 
 
 def set_startup_time():
-    p = subprocess.Popen(['sh','wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[startup_time]
-    stdout, stderr = p.communicate(input="5\n?? 0"+start+":00:00\n11\n")
-    logging.info("new startup time "+start+" set on witty")
+    stdout, stderr = p.communicate(input="5\n?? " + start + ":00:00\n11\n")
+    logging.info("new startup time " + start + " set on witty")
     logging.info(stdout)
 
 
@@ -217,7 +231,8 @@ def main():
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
     logging.basicConfig(filename="trap.log", level=logging.DEBUG, datefmt='%d-%m-%Y %H:%M:%S', format=logger_format)
     try:
-        take_pic()
+        if not image_taken_today:
+            take_pic()
         reboot = send_pic()
         if reboot:
             run_reboot()
@@ -225,7 +240,7 @@ def main():
         logging.error(str(e))
 
     # in case everything works
-    global startup_time, image_taken_today, boot_count,run_time
+    global startup_time, image_taken_today, boot_count, run_time
     if startup_time != 0:
         startup_time == 0
         image_taken_today = False

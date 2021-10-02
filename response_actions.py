@@ -15,5 +15,5 @@ def update(version='latest'):
     branch = None
     if version:
         branch = version
-    system(f'git clone --branch ${branch} GITHUB_URL')
+    system('git clone --branch '+branch+' GITHUB_URL')
     system('mv trap-scripts/* /')

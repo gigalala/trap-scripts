@@ -69,7 +69,8 @@ if [[ "$option" == 1 ]] ;then
     echo "Downloading schedules"
     echo 'Downloading image scripts'
     wget -4 'https://firebasestorage.googleapis.com/v0/b/cameraapp-49969.appspot.com/o/traps%2FtakePic.sh?alt=media&token=fdf0bd3c-f73d-4b85-9b7e-6d7b36a05f9a' -O takePic.sh
-    wget -4 'https://firebasestorage.googleapis.com/v0/b/cameraapp-49969.appspot.com/o/traps%2Ftrap-daily.py?alt=media&token=e4efe46f-d8dc-4b84-a250-0d3d0441bd0c' -O trap-daily.py
+    wget -4 'https://firebasestorage.googleapis.com/v0/b/cameraapp-49969.appspot.com/o/traps%2Ftrap-daily.py?alt=media&token=bf051865-0d95-444f-ba77-9e1f64bdb53d' -O trap-daily.py
+    wget -4 'https://firebasestorage.googleapis.com/v0/b/cameraapp-49969.appspot.com/o/traps%2Fresponse_actions.py?alt=media&token=fb2a3e84-564e-4389-9921-d59363dcf542' -O response_actions.py
 
     #install pip and and python modules 
     echo 'Getting pip and python modules if needed'

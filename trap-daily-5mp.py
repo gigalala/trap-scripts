@@ -6,19 +6,21 @@ from datetime import datetime
 from os import path
 from os import system
 from response_actions import change_battery, stay_on, update
-# from picamera import PiCamera
+from picamera import PiCamera
 import time
 import logging
 import subprocess
 import json
 
-FAIL_REBOOT_ATTEMPTS = 2
-REBOOT_TIME = 60 # 10 min
+FAIL_REBOOT_ATTEMPTS = 3
+REBOOT_TIME = 600  # 10 min
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
 SLEEP_BEFORE_SHUTDOWN = 180  # 3 min
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
 BOOT_DATA_FILE_PATH = "trap.data"
-STARTUP_TIMES = ['22:00:00','22:20:00','22:20:00','22:40:00','23:00:00','23:20:00','23:40:00']
+STARTUP_TIMES = ['08:00:00', '10:00:00', '12:00:00', '14:00:00', '16:00:00', '18:00:00', '20:00:00']
+
+is_test = False
 
 # Boot data
 boot_count = None
@@ -28,14 +30,13 @@ image_taken_today = None
 should_stay_on = False
 start_time = time.time()
 
-
-# camera = PiCamera()
+camera = PiCamera()
 
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
     try:
         _ = requests.head(url, timeout=timeout)
-        return False
+        return True
     except requests.ConnectionError:
         logging.info("No internet connection available.")
     return False
@@ -66,6 +67,7 @@ def get_token():
 
 
 def get_test_mode():
+    global is_test
     if path.exists('testMode.db'):
         file = open('testMode.db', "r")
         test_mode = file.read().strip()
@@ -73,8 +75,10 @@ def get_test_mode():
         if not test_mode:
             return None
         if test_mode == "true":
+            is_test = True
             return True
         elif test_mode == "false":
+            is_test = False
             return False
     return None
 
@@ -101,8 +105,8 @@ def read_trap_boot_data():
 
 def write_trap_boot_data():
     logging.info("write trap data")
-    logging.info("boot count is"+str(boot_count))
-    logging.info("startup time is"+str(startup_time))
+    logging.info("boot count is "+str(boot_count))
+    logging.info("startup time is "+str(startup_time))
     file = open(BOOT_DATA_FILE_PATH, "w")
     json.dump(
         {'boot_count': boot_count, 'startup_time': startup_time,
@@ -112,8 +116,8 @@ def write_trap_boot_data():
 
 def take_pic():
     logging.info("taking image")
-    # camera.resolution = (2592, 1944)
-    # camera.capture("latest.jpg")
+    camera.resolution = (2592, 1944)
+    camera.capture("latest.jpg")
     global image_taken_today
     image_taken_today = True
     logging.info("image taken and saved")
@@ -135,8 +139,9 @@ def send_pic():
     if result.status_code == 200:
         logging.info("image sent")
         data = result.json()
-        logging.info('response data '+data)
-        check_response_for_actions(data)
+        logging.info('response data '+str(data))
+        for action in data:
+            check_response_for_actions(action)
     else:
         logging.error("error, image did not sent - " + result.text)
 
@@ -208,11 +213,14 @@ def send_request(old_time, body, headers):
             return res
 
 
-def set_startup_time(startIndex=startup_time):
+def set_startup_time(start_index=startup_time):
+    if is_test:
+        logging.info("no startup time in test mode")
+        return
     logging.info("set startup time")
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    start = STARTUP_TIMES[startIndex]
-    #command = "5\n?? "+start+":00:00\n11\n"
+    start = STARTUP_TIMES[start_index]
+    #command = "5\n?? "+start+":00:00\n11t\n"
     command = "5\n?? "+start+"\n11\n"
     stdout, stderr = p.communicate(input=command)
     logging.info("new startup time " + start + " set on witty")
@@ -225,7 +233,7 @@ def run_reboot():
     run_time += calc_run_time()
     if boot_count == FAIL_REBOOT_ATTEMPTS:
         logging.info("max reboots reached")
-        startup_time +=  1
+        startup_time += 1
         if startup_time == len(STARTUP_TIMES):
             logging.info("no new startup time for today, setting time for tomorrow")
             startup_time = 1
@@ -236,9 +244,8 @@ def run_reboot():
         system("shutdown now -h")
 
     else:
-        boot_count +=  1
+        boot_count += 1
         write_trap_boot_data()
-        print(boot_count)
         time.sleep(5)
         logging.info("rebooting")
         system('reboot')
@@ -253,9 +260,13 @@ def main():
     global image_taken_today,boot_count,startup_time, run_time
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
     logging.basicConfig(filename="trap.log", level=logging.DEBUG, datefmt='%d-%m-%Y %H:%M:%S', format=logger_format)
+    # this enables a flag is_test so it doesn't change wake time on test mode
+    get_test_mode()
     try:
         read_trap_boot_data()
-        set_startup_time(startup_time)
+        # only first boot needs to set next the startup
+        if boot_count == 0:
+            set_startup_time(startup_time)
         if not image_taken_today:
             take_pic()
         reboot = send_pic()
@@ -271,10 +282,11 @@ def main():
         if run_time < 0:
             run_time = 0
         else:
-            run_time = run_time + calc_run_time()
+            run_time += calc_run_time()
         write_trap_boot_data()
     except Exception as e:
         logging.error(str(e))
+    # check for should stay on command
     if not should_stay_on:
         time.sleep(SLEEP_BEFORE_SHUTDOWN)
         logging.info("shutdown command sent")

@@ -4,6 +4,8 @@
 .idea/modules.xml
 .idea/trapsInitScript.iml
 .idea/vcs.xml
+latest.jpeg
 latest.jpg
 trap.data
-*.log
+trap.log
+wittyPi.log

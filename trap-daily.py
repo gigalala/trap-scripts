@@ -1,5 +1,5 @@
 
-# VERSION = 1.1f
+# VERSION = 2.1
 import requests
 import base64
 from datetime import datetime
@@ -33,10 +33,6 @@ image_taken_today = None
 should_stay_on = False
 start_time = time.time()
 
-arducam_vcm= CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so') #Motorized 8mp line
-arducam_vcm.vcm_init() #Motorized 8mp line
-camera = PiCamera()
-
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
     try:
@@ -60,6 +56,17 @@ def get_serial():
     return cpu_serial
 
 
+def get_camera_type():
+    camera_five = None
+    if path.exists('camera.db'):
+        file = open('camera.db', "r")
+        camera_five = file.read().strip()
+        file.close()
+        if not camera_five:
+            return None
+    return camera_five
+
+
 def get_token():
     token_trap = None
     if path.exists('token.db'):
@@ -68,6 +75,10 @@ def get_token():
         file.close()
         if not token_trap:
             return None
+        if token_trap == "true":
+            return True
+        elif token_trap == "false":
+            return False
     return token_trap
 
 
@@ -121,9 +132,17 @@ def write_trap_boot_data():
 
 def take_pic():
     logging.info("taking image")
-    camera.resolution = (3280,2464)#Motorized 8mp line
-    arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
-    time.sleep(2)#Motorized 8mp line
+    is_five_mega = get_camera_type()
+    camera_res = (2592, 1944)
+    if not is_five_mega:
+        camera_res = (3280, 2464)#Motorized 8mp line
+        arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
+        arducam_vcm.vcm_init()  # Motorized 8mp line
+    camera = PiCamera()
+    camera.resolution = (camera_res[0], camera_res[1])
+    if not is_five_mega:
+        arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
+        time.sleep(2)#Motorized 8mp line
     camera.capture("latest.jpg")
     global image_taken_today
     image_taken_today = True

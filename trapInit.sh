@@ -1,4 +1,5 @@
 #!/bin/bash
+# VERSION = 2.1
 
 show_witty_stats(){
     if [ ! -f /home/pi/wittypi/wittyPi.sh ]; then
@@ -43,20 +44,25 @@ nc='\033[0m' # No Color
 printf "${yellow}Hello, welcome to traps installer/config tool\n${nc}"
 show_witty_stats
 echo would you like to:
-echo '1) intall new trap'
-echo '2) activate production mode'
-echo '3) activate test mode'
-echo '4) clean schdeulers'
-echo '5) new token'
-echo '6) revoke token' 
-echo '7) focus camera'
-echo 'any other key to exit'
+echo '1) install new trap'
+if test -f "trap-daily.py"; then
+    echo '2) activate production mode'
+    echo '3) activate test mode'
+    echo '4) clean schedulers'
+    echo '5) new token'
+    echo '6) revoke token'
+    echo '7) focus camera'fi
+    echo 'any other key to exit'
 
 
 read option
 
 if [[ "$option" == 1 ]] ;then
-
+    while true; do
+        read -p "Is it a five mega pixel camera? (y/n) " yn
+        if [[ "$yn" == 'y' ]]; then echo "true" > /home/pi/camera.db; break; fi
+        if [[ "$yn" == 'n' ]]; then echo "false" > /home/pi/camera.db; break; fi
+    done
     uid=$(cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2)
     password=$(openssl rand -hex 8)
     token=$(openssl rand  -hex 500)
@@ -91,8 +97,8 @@ if [[ "$option" == 1 ]] ;then
     wget -4 'https://firebasestorage.googleapis.com/v0/b/cameraapp-49969.appspot.com/o/traps%2FAutofocus.py?alt=media&token=cfda1a21-5e67-4167-bab4-dabbe26aab07' -O RaspberryPi/Motorized_Focus_Camera/python/Autofocus.py
 
 
-    #Disable autologin
-    echo 'Disable autologin if exisits in system'
+    #Disable auto-login
+    echo 'Disable auto-login if exisits in system'
     sudo sed -i.backup '/autologin-user=/d' /etc/lightdm/lightdm.conf
 
     #Adding startup script to corntab
@@ -108,7 +114,8 @@ if [[ "$option" == 1 ]] ;then
     wget http://www.uugear.com/repo/WittyPi3/install.sh
     echo 'Install Witty pi software'
     sudo sh install.sh
-
+    echo 'adding GPIO-4 fix to wittyPi/daemon.sh'
+    sed -i '94iwhile [ $counter –lt 5 ]; do' wittyPi/daemon.sh
 
     printf "${red}*************************************************************************\n"
     printf "${red}***********************!!!IMPORTANT DEVICE DATA!!!***********************\n"
@@ -135,8 +142,6 @@ elif [[ "$option" == 2 ]]; then
     echo 'Setting production mode'
     echo "false" > /home/pi/testMode.db
     sudo sh wittypi/wittyPi.sh &> /dev/null <<EOF
-    4
-    ?? 08:20
     5
     ?? 08:00:00
     1
@@ -150,11 +155,17 @@ EOF
 elif [[ "$option" == 3 ]]; then
     echo 'Setting test mode '
     echo "true" > /home/pi/testMode.db
+    STARTUP = "0"
+    while true; do
+        read -p "daily startup? (y/n) " yn
+        if [[ "$yn" == 'y' ]]; then
+          STARTUP = "8"
+          break;
+        fi
+    done
     sudo sh wittypi/wittyPi.sh &> /dev/null  <<EOF
-    4
-    ?? ??:20
     5
-    ?? ??:00:00
+    ?? ?$STARTUP:00:00
     1
     11
 EOF

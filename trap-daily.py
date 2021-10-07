@@ -5,9 +5,9 @@ import base64
 from datetime import datetime
 from os import path
 from os import system
-from response_actions import change_battery, stay_on, update
+from response_actions import change_battery, stay_on, update, send_log
 from picamera import PiCamera
-from ctypes import * #Motorized 8mp line
+from ctypes import * # Motorized 8mp line
 import time
 import logging
 import subprocess
@@ -19,6 +19,7 @@ FAIL_REBOOT_ATTEMPTS = 3
 REBOOT_TIME = 600  # 10 min
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
 SLEEP_BEFORE_SHUTDOWN = 180  # 3 min
+STAY_ON_SLEEP = 7200  # two hours
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
 BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['08:00:00', '10:00:00', '12:00:00', '14:00:00', '16:00:00', '18:00:00', '20:00:00']
@@ -136,14 +137,14 @@ def take_pic():
     camera_res = (2592, 1944)
     if not is_five_mega:
         camera_res = (3280, 2464)#Motorized 8mp line
-        arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
-        arducam_vcm.vcm_init()  # Motorized 8mp line
-    camera = PiCamera()
-    camera.resolution = (camera_res[0], camera_res[1])
+        #arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
+        #arducam_vcm.vcm_init()  # Motorized 8mp line
+    #camera = PiCamera()
+    #camera.resolution = (camera_res[0], camera_res[1])
     if not is_five_mega:
-        arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
+        #arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
         time.sleep(2)#Motorized 8mp line
-    camera.capture("latest.jpg")
+    #camera.capture("latest.jpg")
     global image_taken_today
     image_taken_today = True
     logging.info("image taken and saved")
@@ -174,17 +175,23 @@ def send_pic():
 
 def check_response_for_actions(data):
     global should_stay_on, run_time
-    if data['action'] == "none":
-        logging.info("no response action was received")
-    elif data['action'] == "stayOn":
-        logging.info("stay on response action was received")
-        should_stay_on = stay_on()
-    elif data['action'] == "changeBattery":
-        logging.info("change battery response action was received")
-        run_time = change_battery()
-    elif data['action'] == "update":
-        logging.info("update response action was received")
-        update(data['value'])
+    try:
+        if data['action'] == "none":
+            logging.info("no response action was received")
+        elif data['action'] == "stayOn":
+            logging.info("stay on response action was received")
+            should_stay_on = stay_on()
+        elif data['action'] == "changeBattery":
+            logging.info("change battery response action was received")
+            run_time = change_battery()
+        elif data['action'] == "update":
+            logging.info("update response action was received")
+            update(data['value'])
+        elif data['action'] == 'log_update':
+            logging.info("log response action was received")
+            send_log(get_token(), get_serial())
+    except Exception as e:
+        logging.error('could not do action - ' + str(e))
 
 
 def get_body_and_headers():
@@ -246,11 +253,14 @@ def set_startup_time(start_index=startup_time):
     logging.info("set startup time")
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[start_index]
-    #command = "5\n?? "+start+":00:00\n11t\n"
     command = "5\n?? "+start+"\n11\n"
-    stdout, stderr = p.communicate(input=command)
+    stdout, stderr = p.communicate(input = command)
+    for line in stdout.splitlines()[len(stdout.splitlines())/2:]:
+        if line.startswith(">>>"):
+            logging.info(line[4:])
+        elif line.strip().startswith("4.") or line.strip().startswith("5."):
+            logging.info(line[14:])
     logging.info("new startup time " + start + " set on witty")
-    logging.info(stdout)
 
 
 def run_reboot():
@@ -310,13 +320,19 @@ def main():
         else:
             run_time += calc_run_time()
         write_trap_boot_data()
+        # run response actions here
+        if datetime.today().weekday() == 6:
+            logging.info('sending and deleting log')
+            send_log(get_token(), get_serial(), True)
     except Exception as e:
         logging.error(str(e))
+
     # check for should stay on command
-    if not should_stay_on:
+    if should_stay_on:
+        time.sleep(STAY_ON_SLEEP)
+    else:
         time.sleep(SLEEP_BEFORE_SHUTDOWN)
-        logging.info("shutdown command sent")
-        system("shutdown now -h")
+    system("shutdown now -h")
 
 
 if __name__ == "__main__":

@@ -51,7 +51,8 @@ if test -f "trap-daily.py"; then
     echo '4) clean schedulers'
     echo '5) new token'
     echo '6) revoke token'
-    echo '7) focus camera'fi
+    echo '7) focus camera'
+fi
     echo 'any other key to exit'
 
 
@@ -94,7 +95,7 @@ if [[ "$option" == 1 ]] ;then
     #Downloading autofocus software
     echo 'Downloading autofocus software'
     git clone https://github.com/ArduCAM/RaspberryPi.git
-    wget -4 'https://firebasestorage.googleapis.com/v0/b/cameraapp-49969.appspot.com/o/traps%2FAutofocus.py?alt=media&token=cfda1a21-5e67-4167-bab4-dabbe26aab07' -O RaspberryPi/Motorized_Focus_Camera/python/Autofocus.py
+    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/Autofocus.sh' -O RaspberryPi/Motorized_Focus_Camera/python/Autofocus.py
 
 
     #Disable auto-login
@@ -115,7 +116,7 @@ if [[ "$option" == 1 ]] ;then
     echo 'Install Witty pi software'
     sudo sh install.sh
     echo 'adding GPIO-4 fix to wittyPi/daemon.sh'
-    sed -i '94iwhile [ $counter –lt 5 ]; do' wittyPi/daemon.sh
+    sed -i '119iwhile [ $counter –lt 20 ]; do' wittypi/daemon.sh
 
     printf "${red}*************************************************************************\n"
     printf "${red}***********************!!!IMPORTANT DEVICE DATA!!!***********************\n"
@@ -149,7 +150,6 @@ elif [[ "$option" == 2 ]]; then
 EOF
     set_dummy_load
     show_witty_stats
-    sudo shutdown -h 2
     echo 'Done.........';
 
 elif [[ "$option" == 3 ]]; then
@@ -171,7 +171,6 @@ elif [[ "$option" == 3 ]]; then
 EOF
 set_dummy_load
 show_witty_stats
-sudo shutdown -h 2
 echo 'Done.........';
 
 elif [[ "$option" == 4 ]]; then

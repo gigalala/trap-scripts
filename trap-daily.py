@@ -137,14 +137,14 @@ def take_pic():
     camera_res = (2592, 1944)
     if not is_five_mega:
         camera_res = (3280, 2464)#Motorized 8mp line
-        #arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
-        #arducam_vcm.vcm_init()  # Motorized 8mp line
-    #camera = PiCamera()
-    #camera.resolution = (camera_res[0], camera_res[1])
+        arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
+        arducam_vcm.vcm_init()  # Motorized 8mp line
+    camera = PiCamera()
+    camera.resolution = (camera_res[0], camera_res[1])
     if not is_five_mega:
-        #arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
+        arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
         time.sleep(2)#Motorized 8mp line
-    #camera.capture("latest.jpg")
+    camera.capture("latest.jpg")
     global image_taken_today
     image_taken_today = True
     logging.info("image taken and saved")
@@ -184,9 +184,12 @@ def check_response_for_actions(data):
         elif data['action'] == "changeBattery":
             logging.info("change battery response action was received")
             run_time = change_battery()
-        elif data['action'] == "update":
+        elif data['action'] == "versionUpdate":
             logging.info("update response action was received")
-            update(data['value'])
+            if 'value' in data:
+                update(data['value'])
+            else:
+                update()
         elif data['action'] == 'log_update':
             logging.info("log response action was received")
             send_log(get_token(), get_serial())

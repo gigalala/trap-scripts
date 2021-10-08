@@ -116,7 +116,8 @@ if [[ "$option" == 1 ]] ;then
     echo 'Install Witty pi software'
     sudo sh install.sh
     echo 'adding GPIO-4 fix to wittyPi/daemon.sh'
-    sed -i '119iwhile [ $counter –lt 20 ]; do' wittypi/daemon.sh
+    sudo sed -i '119d' wittypi/daemon.sh # dansker
+    sed -i '119iwhile [ $counter -lt 20]; do' wittypi/daemon.sh #dansker
 
     printf "${red}*************************************************************************\n"
     printf "${red}***********************!!!IMPORTANT DEVICE DATA!!!***********************\n"
@@ -155,17 +156,20 @@ EOF
 elif [[ "$option" == 3 ]]; then
     echo 'Setting test mode '
     echo "true" > /home/pi/testMode.db
-    STARTUP = "0"
+    startup=??
     while true; do
         read -p "daily startup? (y/n) " yn
         if [[ "$yn" == 'y' ]]; then
-          STARTUP = "8"
+          startup=08
+          break;
+        fi
+        if [[ "$yn" == 'n' ]]; then
           break;
         fi
     done
     sudo sh wittypi/wittyPi.sh &> /dev/null  <<EOF
     5
-    ?? ?$STARTUP:00:00
+    ?? $startup:00:00
     1
     11
 EOF

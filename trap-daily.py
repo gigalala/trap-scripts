@@ -65,6 +65,10 @@ def get_camera_type():
         file.close()
         if not camera_five:
             return None
+        if camera_five == "true":
+            return True
+        elif camera_five == "false":
+            return False
     return camera_five
 
 

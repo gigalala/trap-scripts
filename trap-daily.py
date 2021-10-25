@@ -171,9 +171,6 @@ def send_pic():
         logging.info("image sent")
         data = result.json()
         logging.info('response data '+str(data))
-        system('chmod +x enable_i2c_vc.sh')
-        system('./enable_i2c_vc.sh')
-        system('apt-get install python-opencv')
         for action in data:
             check_response_for_actions(action)
     else:

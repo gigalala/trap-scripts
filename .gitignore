@@ -10,3 +10,4 @@ trap.data
 trap.log
 wittyPi.log
 .idea/codeStyles/codeStyleConfig.xml
+.idea/trap-scripts.iml

@@ -306,9 +306,9 @@ def main():
     # this enables a flag is_test so it doesn't change wake time on test mode
     get_test_mode()
     try:
-        system('chmod +x enable_i2c_vc.sh')
-        system('./enable_i2c_vc.sh')
-        system('apt-get install python-opencv')
+        #system('chmod +x enable_i2c_vc.sh')
+        #system('./enable_i2c_vc.sh')
+        #system('apt-get install python-opencv')
         read_trap_boot_data()
         # only first boot needs to set next the startup
         if boot_count == 0:

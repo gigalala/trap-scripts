@@ -306,9 +306,6 @@ def main():
     # this enables a flag is_test so it doesn't change wake time on test mode
     get_test_mode()
     try:
-        #system('chmod +x enable_i2c_vc.sh')
-        #system('./enable_i2c_vc.sh')
-        #system('apt-get install python-opencv')
         read_trap_boot_data()
         # only first boot needs to set next the startup
         if boot_count == 0:
@@ -334,8 +331,8 @@ def main():
         if datetime.today().weekday() == 6:
             logging.info('sending and deleting log')
             send_log(get_token(), get_serial(), True)
-        system('chmod +x RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
-        'y' | system('sh RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
+        #system('chmod +x RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
+        #'y' | system('sh RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
     except Exception as e:
         logging.error(str(e))
 

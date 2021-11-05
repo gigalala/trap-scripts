@@ -143,8 +143,8 @@ def take_pic():
         camera_res = (3280, 2464)#Motorized 8mp line
         arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
         arducam_vcm.vcm_init()  # Motorized 8mp line
+    camera = PiCamera()
     try:
-        camera = PiCamera()
         camera.resolution = (camera_res[0], camera_res[1])
         if not is_five_mega:
             arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line

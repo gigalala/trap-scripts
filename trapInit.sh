@@ -82,6 +82,7 @@ if [[ "$option" == 1 ]] ;then
     #install pip and and python modules 
     echo 'Getting pip and python modules if needed'
     sudo apt-get update
+    sudo apt install git
     echo "y\n" | sudo apt install python-pip
     echo "y\n" | sudo apt install python-opencv
     sudo pip install picamera

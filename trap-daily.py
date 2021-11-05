@@ -143,15 +143,21 @@ def take_pic():
         camera_res = (3280, 2464)#Motorized 8mp line
         arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
         arducam_vcm.vcm_init()  # Motorized 8mp line
-    camera = PiCamera()
-    camera.resolution = (camera_res[0], camera_res[1])
-    if not is_five_mega:
-        arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
-        time.sleep(2)#Motorized 8mp line
-    camera.capture("latest.jpg")
-    global image_taken_today
-    image_taken_today = True
-    logging.info("image taken and saved")
+    try:
+        camera = PiCamera()
+        camera.resolution = (camera_res[0], camera_res[1])
+        if not is_five_mega:
+            arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
+            time.sleep(2)#Motorized 8mp line
+        camera.capture("latest.jpg")
+    except Exception:
+        camera.close()
+        logging.exception('failed to take a picture')
+    else:
+        camera.close()
+        global image_taken_today
+        image_taken_today = True
+        logging.info("image taken and saved")
 
 
 def send_pic():
@@ -199,6 +205,7 @@ def check_response_for_actions(data):
             send_log(get_token(), get_serial())
     except Exception as e:
         logging.error('could not do action - ' + str(e))
+        logging.exception('failed to get response for actions')
 
 
 def get_body_and_headers():
@@ -335,6 +342,7 @@ def main():
         #'y' | system('sh RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
     except Exception as e:
         logging.error(str(e))
+        logging.exception('failed at top level')
 
     # check for should stay on command
     if should_stay_on:

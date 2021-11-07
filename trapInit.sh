@@ -76,7 +76,7 @@ if [[ "$option" == 1 ]] ;then
     echo "Downloading schedules"
     echo 'Downloading image scripts'
     wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/takePic.sh' -O takePic.sh
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/trap-daily.py' -O trap-daily.py
+    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/Add-stacktrace-and-close-resource/trap-daily.py' -O trap-daily.py
     wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/response_actions.py' -O response_actions.py
 
     #install pip and and python modules 

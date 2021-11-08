@@ -102,8 +102,7 @@ def read_trap_boot_data():
     if path.isfile(BOOT_DATA_FILE_PATH):
         with open(BOOT_DATA_FILE_PATH) as file:
             config = json.load(file)
-        logging.info("read trap data")
-        logging.info(config)
+        logging.info('trap data' + str(config))
         boot_count = config['boot_count']
         startup_time = config['startup_time']
         run_time = config['run_time']
@@ -118,9 +117,8 @@ def read_trap_boot_data():
 
 
 def write_trap_boot_data():
-    logging.info("write trap data")
-    logging.info("boot count is "+str(boot_count))
-    logging.info("startup time is "+str(startup_time))
+    logging.info("boot count is " + str(boot_count))
+    logging.info("startup time is " + str(startup_time))
     file = open(BOOT_DATA_FILE_PATH, "w")
     json.dump(
         {'boot_count': boot_count, 'startup_time': startup_time,
@@ -130,7 +128,7 @@ def write_trap_boot_data():
 
 def take_pic():
     is_five_mega = get_camera_type()
-    logging.info("starting camera process with " + ("5 mega pixel" if is_five_mega  else  "8 mega pixel"))
+    logging.info("starting camera process with - " + ("5 mega pixel." if is_five_mega  else  "8 mega pixel.") + " with focus value:" + str(FOCUS_VAL))
     camera_res = (2592, 1944)
     if not is_five_mega:
         camera_res = (3280, 2464)#Motorized 8mp line
@@ -140,7 +138,6 @@ def take_pic():
     try:
         camera.resolution = (camera_res[0], camera_res[1])
         if not is_five_mega:
-            logging.info("taking photo of 8mp with focus value:" + str(FOCUS_VAL))
             arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
             time.sleep(2)#Motorized 8mp line
         camera.capture("latest.jpg")
@@ -168,9 +165,8 @@ def send_pic():
         return True
 
     if result.status_code == 200:
-        logging.info("image sent")
         data = result.json()
-        logging.info('response data '+str(data))
+        logging.info('image sent! response data: ' + str(data))
         for action in data:
             check_response_for_actions(action)
     else:
@@ -247,13 +243,11 @@ def send_request(old_time, body, headers):
                 return False
             logging.error(str(e) + " failed attempt at sending request")
         else:
-            logging.info('request sent successfully')
             return res
 
 
 def set_startup_time(start_index=startup_time):
     if is_test:
-        logging.info("no startup time in test mode")
         return
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[start_index]
@@ -300,7 +294,7 @@ def main():
     global image_taken_today,boot_count,startup_time, run_time
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
     logging.basicConfig(filename="trap.log", level=logging.DEBUG, datefmt='%d-%m-%Y %H:%M:%S', format=logger_format)
-    logging.info("========================STARTING NEW DAILY LOG========================")
+    logging.info("========================STARTING NEW WAKEUP LOG========================")
     # this enables a flag is_test so it doesn't change wake time on test mode
     get_test_mode()
     try:

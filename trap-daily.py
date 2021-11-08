@@ -102,7 +102,7 @@ def read_trap_boot_data():
     if path.isfile(BOOT_DATA_FILE_PATH):
         with open(BOOT_DATA_FILE_PATH) as file:
             config = json.load(file)
-        logging.info('trap data' + str(config))
+        logging.info('trap data: ' + str(config))
         boot_count = config['boot_count']
         startup_time = config['startup_time']
         run_time = config['run_time']

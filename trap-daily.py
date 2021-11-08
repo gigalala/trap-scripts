@@ -77,7 +77,7 @@ def get_token():
         file.close()
         if not token_trap:
             return None
-    return token_trap == "true"
+    return token_trap
 
 
 def get_test_mode():
@@ -211,9 +211,8 @@ def get_body_and_headers():
     if not token:
         logging.error("fatal error no token for pi")
         return
-    logging.info('trap token last 4 chars: ' + str(token)[-3:])
     test_mode = get_test_mode()
-    logging.info("mode is :" + ("production" if test_mode  else  "test"))
+    logging.info("mode is : " + ("production" if test_mode  else  "test"))
     if test_mode is None:
         logging.error("Trap is off, no test or production set")
         return
@@ -239,16 +238,16 @@ def wait_for_connectivity(old_time):
 def send_request(old_time, body, headers):
     while True:
         try:
-            logging.info('sending request with body: ' + str(body))
+            logging.info('Attempting to send request')
             res = requests.post(URL, data=body, headers=headers, timeout=120)
         except Exception as e:
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - old_time > REBOOT_TIME:
-                logging.error(str(e) + " reached max retries. shuting of")
+                logging.error(str(e) + " reached max retries. shutting off")
                 return False
-            logging.error(str(e) + " Filed attempt at sending request")
+            logging.error(str(e) + " failed attempt at sending request")
         else:
-            logging.info('request made')
+            logging.info('request sent successfully')
             return res
 
 
@@ -256,10 +255,8 @@ def set_startup_time(start_index=startup_time):
     if is_test:
         logging.info("no startup time in test mode")
         return
-    logging.info("setting next startup time")
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[start_index]
-    logging.info("startup time set to: " + str(start))
     command = "5\n?? " + start + "\n11\n"
     stdout, stderr = p.communicate(input = command)
     for line in stdout.splitlines()[len(stdout.splitlines())/2:]:
@@ -267,7 +264,7 @@ def set_startup_time(start_index=startup_time):
             logging.info(line[4:])
         elif line.strip().startswith("4.") or line.strip().startswith("5."):
             logging.info(line[14:])
-    logging.info("new startup time " + start + " set on witty")
+    logging.info("Next startup time set to: " + str(start))
 
 
 def run_reboot():
@@ -275,10 +272,10 @@ def run_reboot():
     global boot_count, startup_time, image_taken_today, run_time
     run_time += calc_run_time()
     if boot_count == FAIL_REBOOT_ATTEMPTS:
-        logging.info("max reboots reached")
+        logging.info("Max reboots reached")
         startup_time += 1
         if startup_time == len(STARTUP_TIMES):
-            logging.info("no new startup time for today, setting time for tomorrow")
+            logging.info("No new startup time for today, setting time for tomorrow")
             startup_time = 1
             image_taken_today = False
             set_startup_time(0)
@@ -290,7 +287,7 @@ def run_reboot():
         boot_count += 1
         write_trap_boot_data()
         time.sleep(5)
-        logging.info("rebooting")
+        logging.info("Rebooting")
         system('reboot')
 
 
@@ -303,7 +300,7 @@ def main():
     global image_taken_today,boot_count,startup_time, run_time
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
     logging.basicConfig(filename="trap.log", level=logging.DEBUG, datefmt='%d-%m-%Y %H:%M:%S', format=logger_format)
-    logging.info("========================================STARTING NEW DAILY LOG========================================")
+    logging.info("========================STARTING NEW DAILY LOG========================")
     # this enables a flag is_test so it doesn't change wake time on test mode
     get_test_mode()
     try:
@@ -330,7 +327,7 @@ def main():
         write_trap_boot_data()
         # run response actions here
         if datetime.today().weekday() == 6:
-            logging.info('sending and deleting log')
+            logging.info('Sending and deleting log')
             send_log(get_token(), get_serial(), True)
         #system('chmod +x RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
         #'y' | system('sh RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')

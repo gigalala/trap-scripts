@@ -53,6 +53,7 @@ def get_serial():
                 cpu_serial = line[10:26]
         f.close()
     except:
+        logging.error("couldn't return trap's serial")
         return None
     return cpu_serial
 
@@ -65,11 +66,7 @@ def get_camera_type():
         file.close()
         if not camera_five:
             return None
-        if camera_five == "true":
-            return True
-        elif camera_five == "false":
-            return False
-    return camera_five
+    return camera_five == "true"
 
 
 def get_token():
@@ -80,11 +77,7 @@ def get_token():
         file.close()
         if not token_trap:
             return None
-        if token_trap == "true":
-            return True
-        elif token_trap == "false":
-            return False
-    return token_trap
+    return token_trap == "true"
 
 
 def get_test_mode():
@@ -136,8 +129,8 @@ def write_trap_boot_data():
 
 
 def take_pic():
-    logging.info("taking image")
     is_five_mega = get_camera_type()
+    logging.info("starting camera process with " + ("5 mega pixel" if is_five_mega  else  "8 mega pixel"))
     camera_res = (2592, 1944)
     if not is_five_mega:
         camera_res = (3280, 2464)#Motorized 8mp line
@@ -147,6 +140,7 @@ def take_pic():
     try:
         camera.resolution = (camera_res[0], camera_res[1])
         if not is_five_mega:
+            logging.info("taking photo of 8mp with focus value:" + str(FOCUS_VAL))
             arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
             time.sleep(2)#Motorized 8mp line
         camera.capture("latest.jpg")
@@ -180,7 +174,7 @@ def send_pic():
         for action in data:
             check_response_for_actions(action)
     else:
-        logging.error("error, image did not sent - " + result.text)
+        logging.error("error, image was not sent - " + result.text)
 
 
 def check_response_for_actions(data):
@@ -204,30 +198,27 @@ def check_response_for_actions(data):
             logging.info("log response action was received")
             send_log(get_token(), get_serial())
     except Exception as e:
-        logging.error('could not do action - ' + str(e))
-        logging.exception('failed to get response for actions')
+        logging.exception(str(e))
 
 
 def get_body_and_headers():
-    logging.info('get serial')
     trap_id = get_serial()
-    logging.info('get token')
-    token = get_token()
-    logging.info('get test mode')
-    test_mode = get_test_mode()
     if not trap_id:
         logging.error("fatal error no serial for pi")
         return
+    logging.info('trap serial id:' + str(trap_id))
+    token = get_token()
     if not token:
         logging.error("fatal error no token for pi")
         return
+    logging.info('trap token last 4 chars: ' + str(token)[-3:])
+    test_mode = get_test_mode()
+    logging.info("mode is :" + ("production" if test_mode  else  "test"))
     if test_mode is None:
         logging.error("Trap is off, no test or production set")
         return
-    logging.info('before open image')
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
-    logging.info('get time')
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
     number_of_boots = startup_time * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
@@ -248,13 +239,14 @@ def wait_for_connectivity(old_time):
 def send_request(old_time, body, headers):
     while True:
         try:
-            logging.info('trying to send')
+            logging.info('sending request with body: ' + str(body))
             res = requests.post(URL, data=body, headers=headers, timeout=120)
         except Exception as e:
-            logging.error(str(e))
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - old_time > REBOOT_TIME:
+                logging.error(str(e) + " reached max retries. shuting of")
                 return False
+            logging.error(str(e) + " Filed attempt at sending request")
         else:
             logging.info('request made')
             return res
@@ -264,10 +256,11 @@ def set_startup_time(start_index=startup_time):
     if is_test:
         logging.info("no startup time in test mode")
         return
-    logging.info("set startup time")
+    logging.info("setting next startup time")
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[start_index]
-    command = "5\n?? "+start+"\n11\n"
+    logging.info("startup time set to: " + str(start))
+    command = "5\n?? " + start + "\n11\n"
     stdout, stderr = p.communicate(input = command)
     for line in stdout.splitlines()[len(stdout.splitlines())/2:]:
         if line.startswith(">>>"):
@@ -310,6 +303,7 @@ def main():
     global image_taken_today,boot_count,startup_time, run_time
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
     logging.basicConfig(filename="trap.log", level=logging.DEBUG, datefmt='%d-%m-%Y %H:%M:%S', format=logger_format)
+    logging.info("========================================STARTING NEW DAILY LOG========================================")
     # this enables a flag is_test so it doesn't change wake time on test mode
     get_test_mode()
     try:
@@ -341,8 +335,7 @@ def main():
         #system('chmod +x RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
         #'y' | system('sh RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
     except Exception as e:
-        logging.error(str(e))
-        logging.exception('failed at top level')
+        logging.exception(str(e))
 
     # check for should stay on command
     if should_stay_on:

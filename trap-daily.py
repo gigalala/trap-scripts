@@ -18,7 +18,7 @@ FOCUS_VAL = 202 # Motorized 8mp line
 FAIL_REBOOT_ATTEMPTS = 3
 REBOOT_TIME = 600  # 10 min
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
-SLEEP_BEFORE_SHUTDOWN = 60  # 1 min
+SLEEP_BEFORE_SHUTDOWN = 60   # 1 min
 STAY_ON_SLEEP = 7200  # two hours
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
 BOOT_DATA_FILE_PATH = "trap.data"
@@ -296,7 +296,8 @@ def main():
     logging.basicConfig(filename="trap.log", level=logging.DEBUG, datefmt='%d-%m-%Y %H:%M:%S', format=logger_format)
     logging.info("========================STARTING NEW WAKEUP LOG========================")
     # this enables a flag is_test so it doesn't change wake time on test mode
-    get_test_mode()
+    if get_test_mode() is None:
+        return
     try:
         read_trap_boot_data()
         # only first boot needs to set next the startup

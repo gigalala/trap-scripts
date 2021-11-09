@@ -208,10 +208,10 @@ def get_body_and_headers():
         logging.error("fatal error no token for pi")
         return
     test_mode = get_test_mode()
-    logging.info("mode is : " + ("production" if test_mode  else  "test"))
     if test_mode is None:
         logging.error("Trap is off, no test or production set")
         return
+    logging.info("mode is : " + ("production" if not test_mode  else  "test"))
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
@@ -294,10 +294,10 @@ def main():
     global image_taken_today,boot_count,startup_time, run_time
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
     logging.basicConfig(filename="trap.log", level=logging.DEBUG, datefmt='%d-%m-%Y %H:%M:%S', format=logger_format)
-    logging.info("========================STARTING NEW WAKEUP LOG========================")
     # this enables a flag is_test so it doesn't change wake time on test mode
     if get_test_mode() is None:
         return
+    logging.info("========================STARTING NEW WAKEUP LOG========================")
     try:
         read_trap_boot_data()
         # only first boot needs to set next the startup

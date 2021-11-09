@@ -19,7 +19,7 @@ def send_log(token, trap_id, delete=False):
     my_files = {'file': open('trap.log', 'rb')}
     res = requests.post(LOG_URL, data={'trapId': trap_id, 'time': time.time()},
                         headers={"Authorization": "Bearer " + token}, files=my_files, timeout=10)
-    if res.code == 200 and delete:
+    if res.status_code == 200 and delete:
         os.remove('trap.log')
 
 

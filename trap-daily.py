@@ -22,7 +22,7 @@ SLEEP_BEFORE_SHUTDOWN = 60   # 1 min
 STAY_ON_SLEEP = 7200  # two hours
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
 BOOT_DATA_FILE_PATH = "trap.data"
-STARTUP_TIMES = ['08:00:00', '10:00:00', '12:00:00', '14:00:00', '16:00:00', '18:00:00', '20:00:00']
+STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
 
 is_test = False
 

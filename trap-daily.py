@@ -1,4 +1,3 @@
-
 # VERSION = 2.1
 import requests
 import base64
@@ -16,10 +15,10 @@ import json
 FOCUS_VAL = 202 # Motorized 8mp line
 
 FAIL_REBOOT_ATTEMPTS = 3
-REBOOT_TIME = 600  # 10 min
+REBOOT_TIME = 300  # 5 minutes
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
-SLEEP_BEFORE_SHUTDOWN = 60   # 1 min
-STAY_ON_SLEEP = 7200  # two hours
+SLEEP_BEFORE_SHUTDOWN = 5  # 5 seconds
+STAY_ON_SLEEP = 600  # 10 minutes
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
 BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
@@ -53,7 +52,7 @@ def get_serial():
                 cpu_serial = line[10:26]
         f.close()
     except:
-        logging.error("couldn't return trap's serial")
+        logging.error("Couldn't return trap's serial")
         return None
     return cpu_serial
 
@@ -117,8 +116,8 @@ def read_trap_boot_data():
 
 
 def write_trap_boot_data():
-    logging.info("boot count is " + str(boot_count))
-    logging.info("startup time is " + str(startup_time))
+    logging.info("Boot count is " + str(boot_count))
+    logging.info("Startup time is " + str(startup_time))
     file = open(BOOT_DATA_FILE_PATH, "w")
     json.dump(
         {'boot_count': boot_count, 'startup_time': startup_time,
@@ -128,27 +127,28 @@ def write_trap_boot_data():
 
 def take_pic():
     is_five_mega = get_camera_type()
-    logging.info("starting camera process with - " + ("5 mega pixel." if is_five_mega  else  "8 mega pixel.") + " with focus value:" + str(FOCUS_VAL))
+    logging.info("Starting camera process with - " + (
+        "5 mega pixel." if is_five_mega else "8 mega pixel.") + " with focus value:" + str(FOCUS_VAL))
     camera_res = (2592, 1944)
     if not is_five_mega:
-        camera_res = (3280, 2464)#Motorized 8mp line
+        camera_res = (3280, 2464)  # Motorized 8mp line
         arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
         arducam_vcm.vcm_init()  # Motorized 8mp line
     camera = PiCamera()
     try:
         camera.resolution = (camera_res[0], camera_res[1])
         if not is_five_mega:
-            arducam_vcm.vcm_write(FOCUS_VAL)#Motorized 8mp line
-            time.sleep(2)#Motorized 8mp line
+            arducam_vcm.vcm_write(FOCUS_VAL)  # Motorized 8mp line
+            time.sleep(2)  # Motorized 8mp line
         camera.capture("latest.jpg")
     except Exception:
         camera.close()
-        logging.exception('failed to take a picture')
+        logging.exception('Failed to take a picture')
     else:
         camera.close()
         global image_taken_today
         image_taken_today = True
-        logging.info("image taken and saved")
+        logging.info("Image taken and saved")
 
 
 def send_pic():
@@ -159,39 +159,39 @@ def send_pic():
     result = wait_for_connectivity(old_time)
     if not result:
         return True
-    logging.info('connected to internet')
+    logging.info('Connected to internet')
     result = send_request(old_time, body, headers)
     if not result:
         return True
 
     if result.status_code == 200:
         data = result.json()
-        logging.info('image sent! response data: ' + str(data))
+        logging.info('Image sent! response data: ' + str(data))
         for action in data:
             check_response_for_actions(action)
     else:
-        logging.error("error, image was not sent - " + result.text)
+        logging.error("Image was not sent - " + result.text)
 
 
 def check_response_for_actions(data):
     global should_stay_on, run_time
     try:
         if data['action'] == "none":
-            logging.info("no response action was received")
+            logging.info("No response action was received")
         elif data['action'] == "stayOn":
-            logging.info("stay on response action was received")
+            logging.info("Stay on response action was received")
             should_stay_on = stay_on()
         elif data['action'] == "changeBattery":
-            logging.info("change battery response action was received")
+            logging.info("Change battery response action was received")
             run_time = change_battery()
         elif data['action'] == "versionUpdate":
-            logging.info("update response action was received")
+            logging.info("Update response action was received")
             if 'value' in data:
                 update(data['value'])
             else:
                 update()
         elif data['action'] == 'log_update':
-            logging.info("log response action was received")
+            logging.info("Log response action was received")
             send_log(get_token(), get_serial())
     except Exception as e:
         logging.exception(str(e))
@@ -200,18 +200,18 @@ def check_response_for_actions(data):
 def get_body_and_headers():
     trap_id = get_serial()
     if not trap_id:
-        logging.error("fatal error no serial for pi")
+        logging.error("Fatal error no serial for pi")
         return
-    logging.info('trap serial id:' + str(trap_id))
+    logging.info('Trap serial id:' + str(trap_id))
     token = get_token()
     if not token:
-        logging.error("fatal error no token for pi")
+        logging.error("Fatal error no token for pi")
         return
     test_mode = get_test_mode()
     if test_mode is None:
         logging.error("Trap is off, no test or production set")
         return
-    logging.info("mode is : " + ("production" if not test_mode  else  "test"))
+    logging.info("Mode is : " + ("production" if not test_mode else "test"))
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
@@ -252,8 +252,8 @@ def set_startup_time(start_index=startup_time):
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[start_index]
     command = "5\n?? " + start + "\n11\n"
-    stdout, stderr = p.communicate(input = command)
-    for line in stdout.splitlines()[len(stdout.splitlines())/2:]:
+    stdout, stderr = p.communicate(input=command)
+    for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
         if line.startswith(">>>"):
             logging.info(line[4:])
         elif line.strip().startswith("4.") or line.strip().startswith("5."):
@@ -262,7 +262,7 @@ def set_startup_time(start_index=startup_time):
 
 
 def run_reboot():
-    logging.info('run reboot')
+    logging.info('Run reboot')
     global boot_count, startup_time, image_taken_today, run_time
     run_time += calc_run_time()
     if boot_count == FAIL_REBOOT_ATTEMPTS:
@@ -291,7 +291,7 @@ def calc_run_time():
 
 
 def main():
-    global image_taken_today,boot_count,startup_time, run_time
+    global image_taken_today, boot_count, startup_time, run_time
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
     logging.basicConfig(filename="trap.log", level=logging.DEBUG, datefmt='%d-%m-%Y %H:%M:%S', format=logger_format)
     # this enables a flag is_test so it doesn't change wake time on test mode
@@ -324,8 +324,8 @@ def main():
         if datetime.today().weekday() == 6:
             logging.info('Sending and deleting log')
             send_log(get_token(), get_serial(), True)
-        #system('chmod +x RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
-        #'y' | system('sh RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
+        # system('chmod +x RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
+        # 'y' | system('sh RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
     except Exception as e:
         logging.exception(str(e))
 

@@ -12,7 +12,7 @@ import logging
 import subprocess
 import json
 
-FOCUS_VAL = 220 # Motorized 8mp line
+FOCUS_VAL = 180 # Motorized 8mp line
 
 FAIL_REBOOT_ATTEMPTS = 3
 REBOOT_TIME = 300  # 5 minutes

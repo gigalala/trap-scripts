@@ -4,7 +4,7 @@ import base64
 from datetime import datetime
 from os import path
 from os import system
-from response_actions import change_battery, stay_on, update, send_log
+from response_actions import change_battery, stay_on, update, send_log, get_trap_status
 from picamera import PiCamera
 from ctypes import * # Motorized 8mp line
 import time

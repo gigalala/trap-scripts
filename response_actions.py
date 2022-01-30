@@ -35,7 +35,7 @@ def update(version='main'):
 
 
 def get_trap_status(token, trap_id):
-    res = requests.post(LOCAL_STATUS, data={'trapId': trap_id, 'time': time.time()},
+    res = requests.get(LOCAL_STATUS+"/"+trap_id,
                         headers={"Authorization": "Bearer " + token}, timeout=10)
     if res.status_code == 200:
         return result.json()

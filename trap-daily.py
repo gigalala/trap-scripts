@@ -31,7 +31,7 @@ startup_time = None
 run_time = None
 image_taken_today = None
 should_stay_on = False
-# start_time = time.time()
+start_time = time.time()
 
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
@@ -328,13 +328,13 @@ def send_detection(token, trap_id, test_mode):
 
 def update_trap_status(trap_status):
     if trap_status["dev_mode"]:
-        update_trap_data("testMode.db",trap_status["dev_mode"])
+        update_trap_data("testMode.db", trap_status["dev_mode"])
     if trap_status["focus"]:
         update_trap_data("trap_focus.db", trap_status["focus"])
 
 
 def main():
-    start_time = time.time()
+    start_of_run = time.time()
     global image_taken_today, boot_count, startup_time, run_time
     send_attempt = True
     configure_logging(logging)
@@ -354,7 +354,6 @@ def main():
 
         wait_for_connectivity(start_time)
 
-
         trap_status = get_trap_status(token, serial)
         update_trap_status(trap_status)
 
@@ -363,6 +362,7 @@ def main():
 
         test_mode = get_test_mode()
         if test_mode is None:
+            logging.error("")
             return
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         while send_attempt:
@@ -370,7 +370,7 @@ def main():
                 result = send_detection(token, serial, test_mode)
             except Exception as e:
                 time.sleep(CONNECTIVITY_SLEEP_TIME)
-                if time.time() - old_time > REBOOT_TIME:
+                if time.time() - start_of_run > REBOOT_TIME:
                     logging.error(str(e) + " reached max retries. shutting off")
                     run_reboot()
                     return

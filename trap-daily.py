@@ -314,7 +314,7 @@ def update_trap_data(db, data):
     my_file.write(data)
     my_file.close()
 
-def send_detection(token, serial, test_mode):
+def send_detection(token, trap_id, test_mode):
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"

@@ -108,23 +108,23 @@ def get_trap_boot_data_config():
     else:
         logging.info("no boot data file")
 
-def read_trap_boot_data():
-    global boot_count, startup_time, run_time, image_taken_today
-    if path.isfile(BOOT_DATA_FILE_PATH):
-        with open(BOOT_DATA_FILE_PATH) as file:
-            config = json.load(file)
-        logging.info('trap data: ' + str(config))
-        boot_count = config['boot_count']
-        startup_time = config['startup_time']
-        run_time = config['run_time']
-        image_taken_today = config['image_taken_today']
-        file.close()
-    else:
-        logging.info("no boot data file")
-        boot_count = 0
-        startup_time = 1
-        run_time = 0
-        image_taken_today = False
+# def read_trap_boot_data():
+#     global boot_count, startup_time, run_time, image_taken_today
+#     if path.isfile(BOOT_DATA_FILE_PATH):
+#         with open(BOOT_DATA_FILE_PATH) as file:
+#             config = json.load(file)
+#         logging.info('trap data: ' + str(config))
+#         boot_count = config['boot_count']
+#         startup_time = config['startup_time']
+#         run_time = config['run_time']
+#         image_taken_today = config['image_taken_today']
+#         file.close()
+#     else:
+#         logging.info("no boot data file")
+#         boot_count = 0
+#         startup_time = 1
+#         run_time = 0
+#         image_taken_today = False
 
 def write_trap_boot_data(boot_count, startup_time, image_taken_today):
     logging.info("Boot count is " + str(boot_count))
@@ -183,28 +183,28 @@ def take_pic():
 #     else:
 #         logging.error("Image was not sent - " + result.text)
 
-def check_response_for_actions(data):
-    # global should_stay_on, run_time
-    try:
-        if data['action'] == "none":
-            logging.info("No response action was received")
-        # elif data['action'] == "stayOn":
-        #     logging.info("Stay on response action was received")
-        #     should_stay_on = stay_on()
-        elif data['action'] == "changeBattery":
-            logging.info("Change battery response action was received")
-            run_time = change_battery()
-        elif data['action'] == "versionUpdate":
-            logging.info("Update response action was received")
-            if 'value' in data:
-                update(data['value'])
-            else:
-                update()
-        # elif data['action'] == 'log_update':
-        #     logging.info("Log response action was received")
-        #     send_log(get_token(), get_serial())
-    except Exception as e:
-        logging.exception(str(e))
+# def check_response_for_actions(data):
+#     # global should_stay_on, run_time
+#     try:
+#         if data['action'] == "none":
+#             logging.info("No response action was received")
+#         # elif data['action'] == "stayOn":
+#         #     logging.info("Stay on response action was received")
+#         #     should_stay_on = stay_on()
+#         elif data['action'] == "changeBattery":
+#             logging.info("Change battery response action was received")
+#             run_time = change_battery()
+#         elif data['action'] == "versionUpdate":
+#             logging.info("Update response action was received")
+#             if 'value' in data:
+#                 update(data['value'])
+#             else:
+#                 update()
+#         # elif data['action'] == 'log_update':
+#         #     logging.info("Log response action was received")
+#         #     send_log(get_token(), get_serial())
+#     except Exception as e:
+#         logging.exception(str(e))
 
 #
 # def get_body_and_headers():
@@ -255,7 +255,7 @@ def send_request(old_time, body, headers):
         else:
             return res
 
-def set_startup_time(is_test, start_index=startup_time):
+def set_startup_time(is_test, start_index):
     if is_test:
         return
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -334,8 +334,8 @@ def send_detection(token, trap_id, test_mode, start_of_run):
             if result.status_code == 200:
                 data = result.json()
                 logging.info('Image sent! response data: ' + str(data))
-                for action in data:
-                    check_response_for_actions(action)
+                # for action in data:
+                #     check_response_for_actions(action)
                 send_attempt = False
             else:
                 logging.error("Image was not sent - " + result.text)

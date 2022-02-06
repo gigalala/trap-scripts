@@ -355,6 +355,7 @@ def validate_trap_base_data(token, serial):
     if not serial:
         logging.error("Fatal error no serial for pi")
         return False
+    return True
 
 def get_trap_base_data():
     return get_token(), get_serial()
@@ -381,8 +382,7 @@ def main():
     logging.info("========================STARTING NEW WAKEUP LOG========================")
     try:
         token, serial = get_trap_base_data()
-        logging.info('Trap serial id:' + str(serial))
-        logging.info('Trap token id:' + str(token))
+        logging.info('Trap-id:' + str(serial))
         if not validate_trap_base_data(token, serial):
             return
         wait_for_connectivity(start_of_run)

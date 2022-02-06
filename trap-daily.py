@@ -307,7 +307,7 @@ def update_trap_data(db, data):
     my_file.write(data)
     my_file.close()
 
-def send_image(token, trap_id, test_mode):
+def send_image(token, trap_id, test_mode, start_up_time):
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
@@ -318,11 +318,11 @@ def send_image(token, trap_id, test_mode):
     logging.info('Attempting to send request')
     return requests.post(URL, data=body, headers=headers, timeout=120)
 
-def send_detection(token, trap_id, test_mode, start_of_run):
+def send_detection(token, trap_id, test_mode, start_of_run, start_up_time):
     send_attempt = True
     while send_attempt:
         try:
-            result = send_image(token, trap_id, test_mode)
+            result = send_image(token, trap_id, test_mode, start_up_time)
         except Exception as e:
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - start_of_run > REBOOT_TIME:
@@ -395,9 +395,10 @@ def main():
         if test_mode is None:
             return
         if get_trap_boot_data("boot_count") == 0:
+            start_up_time = get_trap_boot_data("startup_time")
             set_startup_time(test_mode, get_trap_boot_data("startup_time"))
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
-        send_detection(token, serial, test_mode, start_of_run)
+        send_detection(token, serial, test_mode, start_of_run, start_up_time)
         send_log_data(token, serial, datetime.today().weekday(), delete_log, trap_status)
         should_stay_on = trap_status["stay_on"]
 

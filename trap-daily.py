@@ -381,6 +381,8 @@ def main():
     logging.info("========================STARTING NEW WAKEUP LOG========================")
     try:
         token, serial = get_trap_base_data()
+        logging.info('Trap serial id:' + str(serial))
+        logging.info('Trap token id:' + str(token))
         if not validate_trap_base_data(token, serial):
             return
         wait_for_connectivity(start_of_run)

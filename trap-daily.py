@@ -394,13 +394,15 @@ def main():
         test_mode = get_test_mode()
         if test_mode is None:
             return
+        start_up_time = get_trap_boot_data("startup_time")
         if get_trap_boot_data("boot_count") == 0:
             start_up_time = get_trap_boot_data("startup_time")
-            set_startup_time(test_mode, get_trap_boot_data("startup_time"))
+            set_startup_time(test_mode,start_up_time)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         send_detection(token, serial, test_mode, start_of_run, start_up_time)
         send_log_data(token, serial, datetime.today().weekday(), delete_log, trap_status)
         should_stay_on = trap_status["stay_on"]
+        logging.info(should_stay_on)
 
 
     except Exception as e:

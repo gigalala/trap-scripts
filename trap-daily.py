@@ -330,6 +330,7 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_time):
                 run_reboot()
                 return
             logging.error(str(e) + " failed attempt at sending request")
+            logging.exception(str(e))
         else:
             if result.status_code == 200:
                 data = result.json()

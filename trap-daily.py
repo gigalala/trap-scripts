@@ -307,7 +307,7 @@ def update_trap_data(db, data):
     my_file.write(data)
     my_file.close()
 
-def send_image(token, trap_id, test_mode, start_up_time):
+def send_image(token, trap_id, test_mode, startup_time):
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
@@ -395,9 +395,10 @@ def main():
         if test_mode is None:
             return
         start_up_time = get_trap_boot_data("startup_time")
+        logging.info("Stratup time is: " + str(start_up_time))
         if get_trap_boot_data("boot_count") == 0:
             start_up_time = get_trap_boot_data("startup_time")
-            set_startup_time(test_mode,start_up_time)
+            set_startup_time(test_mode, start_up_time)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         send_detection(token, serial, test_mode, start_of_run, start_up_time)
         send_log_data(token, serial, datetime.today().weekday(), delete_log, trap_status)

@@ -366,7 +366,7 @@ def get_trap_boot_data(data):
             config = json.load(file)
         logging.info('trap data: ' + str(config))
         boot_data = config[data]
-        logging.info('trap boot data for: ' + data + "is: " + boot_data)
+        logging.info('trap boot data for: ' + str(data) + "is: " + str(boot_data))
         return boot_data
 
 def send_log_data(token, serial, weekday, trap_status, delete_log = False):
@@ -387,7 +387,7 @@ def main():
             return
         wait_for_connectivity(start_of_run)
         trap_status = get_trap_status(token, serial)
-        update_trap_status(trap_status)
+        update_trap_db_status(trap_status)
         if not get_trap_boot_data("image_taken_today"):
             take_pic()
 
@@ -404,11 +404,11 @@ def main():
 
     except Exception as e:
         logging.exception(str(e))
-    if should_stay_on:
-        time.sleep(STAY_ON_SLEEP)
-    else:
-        time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    system("shutdown now -h")
+#    if should_stay_on:
+#        time.sleep(STAY_ON_SLEEP)
+#    else:
+#        time.sleep(SLEEP_BEFORE_SHUTDOWN)
+#    system("shutdown now -h")
 
 
 

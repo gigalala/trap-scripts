@@ -292,9 +292,11 @@ def run_reboot():
         logging.info("Rebooting")
         system('reboot')
 
+
+#TODO
 def calc_run_time():
     now = time.time()
-    return (now - start_time) / 60
+    return (now - 1) / 60
 
 
 def configure_logging(logging):
@@ -312,6 +314,7 @@ def send_image(token, trap_id, test_mode, startup_time):
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
     boot_count = get_trap_boot_data("boot_count")
+    run_time = get_trap_boot_data("run_time")
     number_of_boots = startup_time * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
             'runTime': run_time + calc_run_time(), 'numberOfBoots': number_of_boots}

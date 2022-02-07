@@ -82,9 +82,9 @@ def get_test_mode():
         file.close()
         if not test_mode:
             return None
-        if test_mode == "true":
+        if test_mode == "True":
             return True
-        elif test_mode == "false":
+        elif test_mode == "False":
             return False
     return None
 
@@ -247,8 +247,8 @@ def configure_logging(logging):
 
 def update_trap_data(db, data):
     my_file = open(db, "w")
-    logging.info("writing to :" + db +". with value: " + data)
-    my_file.write(data)
+    logging.info("writing to :" + db +". with value: " + str(data))
+    my_file.write(str(data))
     my_file.close()
 
 def send_image(token, trap_id, test_mode, startup_time):

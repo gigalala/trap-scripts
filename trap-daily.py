@@ -348,7 +348,7 @@ def main():
             set_startup_time(test_mode, start_up_time)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         send_detection(token, serial, test_mode, start_of_run, start_up_time)
-        send_log_data(token, serial, datetime.today().weekday(), False, trap_status)
+        send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
         logging.info(should_stay_on)
         if should_stay_on:

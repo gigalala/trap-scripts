@@ -23,15 +23,6 @@ URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_im
 BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
 
-# is_test = False
-
-# Boot data
-# boot_count = None
-# startup_time = None
-# run_time = None
-# image_taken_today = None
-# should_stay_on = False
-# start_time = time.time()
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
     try:
@@ -85,7 +76,6 @@ def get_token():
     return token_trap
 
 def get_test_mode():
-    # global is_test
     if path.exists('testMode.db'):
         file = open('testMode.db', "r")
         test_mode = file.read().strip()
@@ -93,10 +83,8 @@ def get_test_mode():
         if not test_mode:
             return None
         if test_mode == "true":
-            # is_test = True
             return True
         elif test_mode == "false":
-            # is_test = False
             return False
     return None
 
@@ -183,53 +171,7 @@ def take_pic():
 #     else:
 #         logging.error("Image was not sent - " + result.text)
 
-# def check_response_for_actions(data):
-#     # global should_stay_on, run_time
-#     try:
-#         if data['action'] == "none":
-#             logging.info("No response action was received")
-#         # elif data['action'] == "stayOn":
-#         #     logging.info("Stay on response action was received")
-#         #     should_stay_on = stay_on()
-#         elif data['action'] == "changeBattery":
-#             logging.info("Change battery response action was received")
-#             run_time = change_battery()
-#         elif data['action'] == "versionUpdate":
-#             logging.info("Update response action was received")
-#             if 'value' in data:
-#                 update(data['value'])
-#             else:
-#                 update()
-#         # elif data['action'] == 'log_update':
-#         #     logging.info("Log response action was received")
-#         #     send_log(get_token(), get_serial())
-#     except Exception as e:
-#         logging.exception(str(e))
 
-#
-# def get_body_and_headers():
-#     trap_id = get_serial()
-#     if not trap_id:
-#         logging.error("Fatal error no serial for pi")
-#         return
-#     logging.info('Trap serial id:' + str(trap_id))
-#     token = get_token()
-#     if not token:
-#         logging.error("Fatal error no token for pi")
-#         return
-#     test_mode = get_test_mode()
-#     if test_mode is None:
-#         logging.error("Trap is off, no test or production set")
-#         return
-#     logging.info("Mode is : " + ("production" if not test_mode else "test"))
-#     with open('latest.jpg', "rb") as image_file:
-#         encoded_string = base64.b64encode(image_file.read())
-#     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
-#     number_of_boots = startup_time * FAIL_REBOOT_ATTEMPTS + boot_count
-#     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
-#             'runTime': run_time + calc_run_time(), 'numberOfBoots': number_of_boots}
-#     headers = {"Authorization": "Bearer " + token}
-#     return body, headers
 
 def wait_for_connectivity(start_of_run):
     time.sleep(CONNECTIVITY_SLEEP_TIME)
@@ -406,9 +348,17 @@ def main():
             set_startup_time(test_mode, start_up_time)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         send_detection(token, serial, test_mode, start_of_run, start_up_time)
-        send_log_data(token, serial, datetime.today().weekday(), delete_log, trap_status)
+        send_log_data(token, serial, datetime.today().weekday(), False, trap_status)
         should_stay_on = trap_status["stay_on"]
         logging.info(should_stay_on)
+        if should_stay_on:
+            while True:
+                time.sleep(CONNECTIVITY_SLEEP_TIME)
+                changed_trap_status = get_trap_status()
+                logging.info(changed_trap_status)
+
+
+
 
 
     except Exception as e:
@@ -418,59 +368,6 @@ def main():
 #    else:
 #        time.sleep(SLEEP_BEFORE_SHUTDOWN)
 #    system("shutdown now -h")
-
-
-
-
-
-
-
-
-#TODO
-    # this enables a flag is_test so it doesn't change wake time on test mode
-    # trap_status = get_trap_status(get_token(), get_serial())
-
-    # if get_test_mode() is None:
-    #     return
-    # logging.info("========================STARTING NEW WAKEUP LOG========================")
-    # try:
-    #     read_trap_boot_data()
-    #     # only first boot needs to set next the startup
-    #     if boot_count == 0:
-    #         set_startup_time(startup_time)
-    #     if not image_taken_today:
-    #         take_pic()
-    #     reboot = send_pic()
-    #     if reboot:
-    #         run_reboot()
-    #         return
-    #     # in case everything works
-    #     startup_time = 1
-    #     image_taken_today = False
-    #     boot_count = 0
-    #     set_startup_time(0)
-    #     # check for battery change command
-    #     if run_time < 0:
-    #         run_time = 0
-    #     else:
-    #         run_time += calc_run_time()
-    #     write_trap_boot_data()
-    #     # run response actions here
-    #     if datetime.today().weekday() == 6:
-    #         logging.info('Sending and deleting log')
-    #         send_log(get_token(), get_serial(), True)
-    #     # system('chmod +x RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
-    #     # 'y' | system('sh RaspberryPi/Motorized_Focus_Camera/enable_i2c_vc.sh')
-    # except Exception as e:
-    #     logging.exception(str(e))
-    #
-    # # check for should stay on command
-    # if should_stay_on:
-    #     time.sleep(STAY_ON_SLEEP)
-    # else:
-    #     time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    # system("shutdown now -h")
-
 
 if __name__ == "__main__":
     main()

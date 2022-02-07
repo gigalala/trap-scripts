@@ -354,9 +354,8 @@ def main():
         if should_stay_on:
             while True:
                 time.sleep(CONNECTIVITY_SLEEP_TIME)
-                changed_trap_status = get_trap_status()
-                logging.info(changed_trap_status)
-
+                changed_trap_status = get_trap_status(token, serial)
+                logging.info("new changed status: " + str(changed_trap_status))
 
 
 

@@ -92,27 +92,11 @@ def get_trap_boot_data_config():
     if path.isfile(BOOT_DATA_FILE_PATH):
         with open(BOOT_DATA_FILE_PATH) as file:
             config = json.load(file)
+            logging.info('trap config data: ' + str(config))
         return config
     else:
         logging.info("no boot data file")
 
-# def read_trap_boot_data():
-#     global boot_count, startup_time, run_time, image_taken_today
-#     if path.isfile(BOOT_DATA_FILE_PATH):
-#         with open(BOOT_DATA_FILE_PATH) as file:
-#             config = json.load(file)
-#         logging.info('trap data: ' + str(config))
-#         boot_count = config['boot_count']
-#         startup_time = config['startup_time']
-#         run_time = config['run_time']
-#         image_taken_today = config['image_taken_today']
-#         file.close()
-#     else:
-#         logging.info("no boot data file")
-#         boot_count = 0
-#         startup_time = 1
-#         run_time = 0
-#         image_taken_today = False
 
 def write_trap_boot_data(boot_count, startup_time, image_taken_today):
     logging.info("Boot count is " + str(boot_count))
@@ -148,29 +132,6 @@ def take_pic():
         global image_taken_today
         image_taken_today = True
         logging.info("Image taken and saved")
-
-
-# def send_pic():
-#     body, headers = get_body_and_headers()
-#     if not body or not headers:
-#         return
-#     old_time = time.time()
-#     result = wait_for_connectivity(old_time)
-#     if not result:
-#         return True
-#     logging.info('Connected to internet')
-#     result = send_request(old_time, body, headers)
-#     if not result:
-#         return True
-#
-#     if result.status_code == 200:
-#         data = result.json()
-#         logging.info('Image sent! response data: ' + str(data))
-#         for action in data:
-#             check_response_for_actions(action)
-#     else:
-#         logging.error("Image was not sent - " + result.text)
-
 
 
 def wait_for_connectivity(start_of_run):
@@ -234,12 +195,10 @@ def run_reboot():
         logging.info("Rebooting")
         system('reboot')
 
-
 #TODO
 def calc_run_time():
     now = time.time()
     return (now - 1) / 60
-
 
 def configure_logging(logging):
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
@@ -251,12 +210,12 @@ def update_trap_data(db, data):
     my_file.write(str(data))
     my_file.close()
 
-def send_image(token, trap_id, test_mode, startup_time):
+def send_image(token, trap_id, test_mode, startup_time, get_trap_boot_data):
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
-    boot_count = get_trap_boot_data("boot_count")
-    run_time = get_trap_boot_data("run_time")
+    boot_count = get_trap_boot_data("boot_count", get_trap_boot_data)
+    run_time = get_trap_boot_data("run_time", get_trap_boot_data)
     number_of_boots = startup_time * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
             'runTime': run_time + calc_run_time(), 'numberOfBoots': number_of_boots}
@@ -264,11 +223,11 @@ def send_image(token, trap_id, test_mode, startup_time):
     logging.info('Attempting to send request')
     return requests.post(URL, data=body, headers=headers, timeout=120)
 
-def send_detection(token, trap_id, test_mode, start_of_run, start_up_time):
+def send_detection(token, trap_id, test_mode, start_of_run, start_up_time, config):
     send_attempt = True
     while send_attempt:
         try:
-            result = send_image(token, trap_id, test_mode, start_up_time)
+            result = send_image(token, trap_id, test_mode, start_up_time, config)
         except Exception as e:
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - start_of_run > REBOOT_TIME:
@@ -281,8 +240,6 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_time):
             if result.status_code == 200:
                 data = result.json()
                 logging.info('Image sent! response data: ' + str(data))
-                # for action in data:
-                #     check_response_for_actions(action)
                 send_attempt = False
             else:
                 logging.error("Image was not sent - " + result.text)
@@ -307,18 +264,14 @@ def validate_trap_base_data(token, serial):
 def get_trap_base_data():
     return get_token(), get_serial()
 
-def get_trap_boot_data(data):
-    if path.isfile(BOOT_DATA_FILE_PATH):
-        with open(BOOT_DATA_FILE_PATH) as file:
-            config = json.load(file)
-        logging.info('trap data: ' + str(config))
+
+def get_trap_boot_data(data, config):
         boot_data = config[data]
-        logging.info('trap boot data for: ' + str(data) + "is: " + str(boot_data))
+        logging.info('trap boot data for: ' + str(data) + '. is: ' + str(boot_data))
         return boot_data
 
 def send_log_data(token, serial, weekday, trap_status, delete_log = False):
     if trap_status["send_log"] or weekday == 6:
-        logging.info('Sending weekend log')
         send_log(token, serial, delete_log)
 
 
@@ -335,28 +288,32 @@ def main():
         wait_for_connectivity(start_of_run)
         trap_status = get_trap_status(token, serial)
         update_trap_db_status(trap_status)
-        if not get_trap_boot_data("image_taken_today"):
+        config = get_trap_boot_data_config()
+        if not get_trap_boot_data("image_taken_today", config):
             take_pic()
-
         test_mode = get_test_mode()
         if test_mode is None:
             return
-        start_up_time = get_trap_boot_data("startup_time")
-        logging.info("Stratup time is: " + str(start_up_time))
-        if get_trap_boot_data("boot_count") == 0:
-            start_up_time = get_trap_boot_data("startup_time")
+        start_up_time = get_trap_boot_data("startup_time", config)
+        logging.info("Startup time is: " + str(start_up_time))
+        if get_trap_boot_data("boot_count", config) == 0:
+            start_up_time = get_trap_boot_data("startup_time", config)
             set_startup_time(test_mode, start_up_time)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
-        send_detection(token, serial, test_mode, start_of_run, start_up_time)
+        send_detection(token, serial, test_mode, start_of_run, start_up_time, config)
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
-        logging.info(should_stay_on)
-        if should_stay_on:
-            while True:
-                time.sleep(CONNECTIVITY_SLEEP_TIME)
-                changed_trap_status = get_trap_status(token, serial)
-                logging.info("new changed status: " + str(changed_trap_status))
-
+        while should_stay_on:
+            logging.info("Stay on loop, sleeping for: " + CONNECTIVITY_SLEEP_TIME + "seconds and sending request for changes")
+            time.sleep(CONNECTIVITY_SLEEP_TIME)
+            changed_trap_status = get_trap_status(token, serial)
+            logging.info("New changed status: " + str(changed_trap_status))
+            update_trap_db_status(changed_trap_status)
+            if changed_trap_status["take_pic"]:
+                send_detection(token, serial, test_mode, start_of_run, start_up_time, config)
+            send_log_data(token, serial, datetime.today().weekday(), changed_trap_status, False)
+            if changed_trap_status["turn_off"]:
+                should_stay_on = False
 
 
 

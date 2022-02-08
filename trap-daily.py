@@ -309,10 +309,10 @@ def main():
             changed_trap_status = get_trap_status(token, serial)
             logging.info("New changed status: " + str(changed_trap_status))
             update_trap_db_status(changed_trap_status)
-            if changed_trap_status["take_pic"]:
-                send_detection(token, serial, test_mode, start_of_run, start_up_time, config)
+            if changed_trap_status.get("take_pic"):
+                send_detection(token, serial, test_mode, start_of_run, start_up_time, boot_count, config)
             send_log_data(token, serial, datetime.today().weekday(), changed_trap_status, False)
-            if changed_trap_status["turn_off"]:
+            if changed_trap_status.get("turn_off"):
                 should_stay_on = False
 
 

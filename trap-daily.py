@@ -220,7 +220,7 @@ def send_image(token, trap_id, test_mode, startup_time, get_trap_boot_data):
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
             'runTime': run_time + calc_run_time(), 'numberOfBoots': number_of_boots}
     headers = {"Authorization": "Bearer " + token}
-    logging.info('Attempting to send request')
+    logging.info('Attempting to send Image')
     return requests.post(URL, data=body, headers=headers, timeout=120)
 
 def send_detection(token, trap_id, test_mode, start_of_run, start_up_time, config):

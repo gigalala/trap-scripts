@@ -210,12 +210,12 @@ def update_trap_data(db, data):
     my_file.write(str(data))
     my_file.close()
 
-def send_image(token, trap_id, test_mode, startup_time, get_trap_boot_data):
+def send_image(token, trap_id, test_mode, startup_time, config):
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
-    boot_count = get_trap_boot_data("boot_count", get_trap_boot_data)
-    run_time = get_trap_boot_data("run_time", get_trap_boot_data)
+    boot_count = get_trap_boot_data("boot_count", config)
+    run_time = get_trap_boot_data("run_time", config)
     number_of_boots = startup_time * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
             'runTime': run_time + calc_run_time(), 'numberOfBoots': number_of_boots}

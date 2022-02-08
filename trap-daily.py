@@ -304,7 +304,7 @@ def main():
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
         while should_stay_on:
-            logging.info("Stay on loop, sleeping for: " + CONNECTIVITY_SLEEP_TIME + "seconds and sending request for changes")
+            logging.info("Stay on loop, sleeping for: " + str(CONNECTIVITY_SLEEP_TIME) + "seconds and sending request for changes")
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             changed_trap_status = get_trap_status(token, serial)
             logging.info("New changed status: " + str(changed_trap_status))

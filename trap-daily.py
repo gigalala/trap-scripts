@@ -210,11 +210,10 @@ def update_trap_data(db, data):
     my_file.write(str(data))
     my_file.close()
 
-def send_image(token, trap_id, test_mode, startup_time, config):
+def send_image(token, trap_id, test_mode, startup_time, boot_count, config):
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
-    boot_count = get_trap_boot_data("boot_count", config)
     run_time = get_trap_boot_data("run_time", config)
     number_of_boots = startup_time * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
@@ -223,11 +222,11 @@ def send_image(token, trap_id, test_mode, startup_time, config):
     logging.info('Attempting to send Image')
     return requests.post(URL, data=body, headers=headers, timeout=120)
 
-def send_detection(token, trap_id, test_mode, start_of_run, start_up_time, config):
+def send_detection(token, trap_id, test_mode, start_of_run, start_up_time, boot_count, config):
     send_attempt = True
     while send_attempt:
         try:
-            result = send_image(token, trap_id, test_mode, start_up_time, config)
+            result = send_image(token, trap_id, test_mode, start_up_time, boot_count, config)
         except Exception as e:
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - start_of_run > REBOOT_TIME:
@@ -296,11 +295,12 @@ def main():
             return
         start_up_time = get_trap_boot_data("startup_time", config)
         logging.info("Startup time is: " + str(start_up_time))
-        if get_trap_boot_data("boot_count", config) == 0:
+        boot_count = get_trap_boot_data("boot_count", config)
+        if boot_count == 0:
             start_up_time = get_trap_boot_data("startup_time", config)
             set_startup_time(test_mode, start_up_time)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
-        send_detection(token, serial, test_mode, start_of_run, start_up_time, config)
+        send_detection(token, serial, test_mode, start_of_run, start_up_time, boot_count, config)
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
         while should_stay_on:

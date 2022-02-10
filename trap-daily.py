@@ -303,11 +303,11 @@ def main():
         send_detection(token, serial, test_mode, start_of_run, start_up_time, boot_count, config)
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
-        logging.info("now - " + str(time.now()) + "strat-of-run: " + str(start_of_run) + "on time - " + STAY_ON_SLEEP)
-        while should_stay_on and (time.now() - start_of_run) > STAY_ON_SLEEP:
+        logging.info("now - " + str(time.time()) + "strat-of-run: " + str(start_of_run) + "on time - " + STAY_ON_SLEEP)
+        while should_stay_on and (time.time() - start_of_run) > STAY_ON_SLEEP:
             logging.info(
-                "now - " + str(time.now()) + "strat-of-run: " + str(start_of_run) + "on time - " + STAY_ON_SLEEP)
-            logging.info("time diff calculation - " + str(time.now() - start_of_run))
+                "now - " + str(time.time()) + "strat-of-run: " + str(start_of_run) + "on time - " + STAY_ON_SLEEP)
+            logging.info("time diff calculation - " + str(time.time() - start_of_run))
             logging.info("Stay on loop, sleeping for: " + str(CONNECTIVITY_SLEEP_TIME) + "seconds and sending request for changes")
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             changed_trap_status = get_trap_status(token, serial)

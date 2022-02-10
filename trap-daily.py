@@ -297,13 +297,17 @@ def main():
         logging.info("Startup time is: " + str(start_up_time))
         boot_count = get_trap_boot_data("boot_count", config)
         if boot_count == 0:
-            start_up_time = get_trap_boot_data("startup_time", config)
+            # start_up_time = get_trap_boot_data("startup_time", config)
             set_startup_time(test_mode, start_up_time)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         send_detection(token, serial, test_mode, start_of_run, start_up_time, boot_count, config)
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
-        while should_stay_on:
+        logging.info("now - " + str(time.now()) + "strat-of-run: " + str(start_of_run) + "on time - " + STAY_ON_SLEEP)
+        while should_stay_on and (time.now() - start_of_run) > STAY_ON_SLEEP:
+            logging.info(
+                "now - " + str(time.now()) + "strat-of-run: " + str(start_of_run) + "on time - " + STAY_ON_SLEEP)
+            logging.info("time diff calculation - " + str(time.now() - start_of_run))
             logging.info("Stay on loop, sleeping for: " + str(CONNECTIVITY_SLEEP_TIME) + "seconds and sending request for changes")
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             changed_trap_status = get_trap_status(token, serial)

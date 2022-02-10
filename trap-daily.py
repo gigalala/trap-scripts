@@ -304,7 +304,7 @@ def main():
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
         logging.info("now - " + str(time.time()) + "strat-of-run: " + str(start_of_run) + "on time - " + str(STAY_ON_SLEEP))
-        while should_stay_on and (time.time() - start_of_run) > STAY_ON_SLEEP:
+        while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
             logging.info(
                 "now - " + str(time.time()) + "strat-of-run: " + str(start_of_run) + "on time - " + str(STAY_ON_SLEEP))
             logging.info("time diff calculation - " + str(time.time() - start_of_run))

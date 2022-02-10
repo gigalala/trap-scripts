@@ -18,7 +18,7 @@ FAIL_REBOOT_ATTEMPTS = 2
 REBOOT_TIME = 300  # 5 minutes
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
 SLEEP_BEFORE_SHUTDOWN = 5  # 5 seconds
-STAY_ON_SLEEP = 600  # 10 minutes
+STAY_ON_SLEEP = 60  # 10 minutes
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
 BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
@@ -275,7 +275,6 @@ def send_log_data(token, serial, weekday, trap_status, delete_log = False):
 
 
 def main():
-    should_stay_on = False
     start_of_run = time.time()
     configure_logging(logging)
     logging.info("========================STARTING NEW WAKEUP LOG========================")
@@ -303,6 +302,7 @@ def main():
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
         while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
+            logging.info("now - " + str(time.time()) +  "start of run - " +str(start_of_run) + "stay on for - " + str(STAY_ON_SLEEP))
             logging.info("-----------TRAP IS STAYING ON CHECKING DATA AND PERFORMING TASKS-----------")
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             changed_trap_status = get_trap_status(token, serial)

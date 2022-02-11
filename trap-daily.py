@@ -18,7 +18,7 @@ FAIL_REBOOT_ATTEMPTS = 2
 REBOOT_TIME = 300  # 5 minutes
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
 SLEEP_BEFORE_SHUTDOWN = 5  # 5 seconds
-STAY_ON_SLEEP = 60  # 10 minutes
+STAY_ON_SLEEP = 600  # 10 minutes
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
 BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
@@ -134,13 +134,13 @@ def take_pic():
         logging.info("Image taken and saved")
 
 
-def wait_for_connectivity(start_of_run):
+def wait_for_connectivity(start_of_run, pre_config):
     time.sleep(CONNECTIVITY_SLEEP_TIME)
     while not connected_to_internet():
         logging.info("Sleeping for: " + CONNECTIVITY_SLEEP_TIME)
         time.sleep(CONNECTIVITY_SLEEP_TIME)
         if time.time() - start_of_run > REBOOT_TIME:
-            return run_reboot()
+            return run_reboot(pre_config)
     logging.info('Connected to internet')
     return True
 
@@ -172,9 +172,12 @@ def set_startup_time(is_test, start_index):
             logging.info(line[14:])
     logging.info("Next startup time set to: " + str(start))
 
-def run_reboot():
+def run_reboot(config):
     logging.info('Run reboot')
     # global boot_count, startup_time, image_taken_today, run_time
+    run_time = config["run_time"]
+    boot_count = config["boot_count"]
+    startup_time = config["startup_tim"]
     run_time += calc_run_time()
     if boot_count == FAIL_REBOOT_ATTEMPTS:
         logging.info("Max reboots reached")
@@ -245,10 +248,10 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_time, boot_
 
 
 def update_trap_db_status(trap_status):
-    if trap_status["dev_mode"]:
-        update_trap_data("testMode.db", trap_status["dev_mode"])
-    if trap_status["focus"]:
-        update_trap_data("trap_focus.db", trap_status["focus"])
+    if trap_status.get("dev_mode") is not None:
+        update_trap_data("testMode.db", trap_status.get("dev_mode"))
+    if trap_status.get("focus"):
+        update_trap_data("trap_focus.db", trap_status.get("focus"))
 
 
 def validate_trap_base_data(token, serial):
@@ -283,7 +286,8 @@ def main():
         logging.info('Trap-id:' + str(serial))
         if not validate_trap_base_data(token, serial):
             return
-        wait_for_connectivity(start_of_run)
+        pre_config = get_trap_boot_data_config()
+        wait_for_connectivity(start_of_run, pre_config)
         trap_status = get_trap_status(token, serial)
         update_trap_db_status(trap_status)
         config = get_trap_boot_data_config()

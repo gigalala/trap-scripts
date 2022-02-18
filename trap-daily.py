@@ -132,11 +132,11 @@ def take_pic(config):
         camera.capture("latest.jpg")
     except Exception:
         camera.close()
-        config['image_taken_today'] = True
-        update_config_file(config)
         logging.exception('Failed to take a picture')
     else:
         camera.close()
+        config['image_taken_today'] = True
+        update_config_file(config)
         logging.info("Image taken and saved")
 
 

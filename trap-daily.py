@@ -98,7 +98,7 @@ def get_trap_boot_data_config():
         logging.info("no boot data file")
 
 
-def write_trap_boot_data(boot_count, startup_time, image_taken_today):
+def write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today):
     logging.info("Boot count is " + str(boot_count))
     logging.info("Startup time is " + str(startup_time))
     file = open(BOOT_DATA_FILE_PATH, "w")
@@ -129,8 +129,8 @@ def take_pic():
         logging.exception('Failed to take a picture')
     else:
         camera.close()
-        global image_taken_today
-        image_taken_today = True
+        # global image_taken_today
+        # image_taken_today = True
         logging.info("Image taken and saved")
 
 
@@ -174,10 +174,10 @@ def set_startup_time(is_test, start_index):
 
 def run_reboot(config):
     logging.info('Run reboot')
-    # global boot_count, startup_time, image_taken_today, run_time
     run_time = config["run_time"]
     boot_count = config["boot_count"]
-    startup_time = config["startup_tim"]
+    startup_time = config["startup_time"]
+    image_taken_today = config["image_taken_today"]
     run_time += calc_run_time()
     if boot_count == FAIL_REBOOT_ATTEMPTS:
         logging.info("Max reboots reached")
@@ -188,7 +188,7 @@ def run_reboot(config):
             image_taken_today = False
             set_startup_time(0)
         boot_count = 0
-        write_trap_boot_data()
+        write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today)
         system("shutdown now -h")
 
     else:

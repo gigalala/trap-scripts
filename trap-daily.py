@@ -98,6 +98,12 @@ def get_trap_boot_data_config():
         logging.info("no boot data file")
 
 
+def update_config_file(config):
+    file = open(BOOT_DATA_FILE_PATH, "w")
+    json.dump(config, file)
+    file.close()
+
+
 def write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today):
     logging.info("Boot count is " + str(boot_count))
     logging.info("Startup time is " + str(startup_time))
@@ -107,7 +113,7 @@ def write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today):
          'run_time': run_time, 'image_taken_today': image_taken_today}, file)
     file.close()
 
-def take_pic():
+def take_pic(config):
     is_five_mega = get_camera_type()
     focus_value = get_focus_value()
     logging.info("Starting camera process with - " + (
@@ -126,11 +132,11 @@ def take_pic():
         camera.capture("latest.jpg")
     except Exception:
         camera.close()
+        config['image_taken_today'] = True
+        update_config_file(config)
         logging.exception('Failed to take a picture')
     else:
         camera.close()
-        # global image_taken_today
-        # image_taken_today = True
         logging.info("Image taken and saved")
 
 
@@ -234,7 +240,7 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_time, boot_
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - start_of_run > REBOOT_TIME:
                 logging.error(str(e) + " reached max retries. shutting off")
-                run_reboot()
+                run_reboot(config)
                 return
             logging.error(str(e) + " failed attempt at sending request")
             logging.exception(str(e))
@@ -246,13 +252,11 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_time, boot_
             else:
                 logging.error("Image was not sent - " + result.text)
 
-
 def update_trap_db_status(trap_status):
     if trap_status.get("dev_mode") is not None:
         update_trap_data("testMode.db", trap_status.get("dev_mode"))
     if trap_status.get("focus"):
         update_trap_data("trap_focus.db", trap_status.get("focus"))
-
 
 def validate_trap_base_data(token, serial):
     if not token:
@@ -266,7 +270,6 @@ def validate_trap_base_data(token, serial):
 def get_trap_base_data():
     return get_token(), get_serial()
 
-
 def get_trap_boot_data(data, config):
         boot_data = config[data]
         logging.info('trap boot data for: ' + str(data) + '. is: ' + str(boot_data))
@@ -275,7 +278,6 @@ def get_trap_boot_data(data, config):
 def send_log_data(token, serial, weekday, trap_status, delete_log = False):
     if trap_status["send_log"] or weekday == 6:
         send_log(token, serial, delete_log)
-
 
 def main():
     start_of_run = time.time()
@@ -292,7 +294,7 @@ def main():
         update_trap_db_status(trap_status)
         config = get_trap_boot_data_config()
         if not get_trap_boot_data("image_taken_today", config):
-            take_pic()
+            take_pic(config)
         test_mode = get_test_mode()
         if test_mode is None:
             return
@@ -319,7 +321,6 @@ def main():
             send_log_data(token, serial, datetime.today().weekday(), changed_trap_status, False)
             if changed_trap_status.get("turn_off"):
                 should_stay_on = False
-
 
 
     except Exception as e:

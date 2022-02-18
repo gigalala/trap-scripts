@@ -193,7 +193,7 @@ def run_reboot(config):
 
     else:
         boot_count += 1
-        write_trap_boot_data()
+        write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today)
         time.sleep(5)
         logging.info("Rebooting")
         system('reboot')

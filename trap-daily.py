@@ -263,7 +263,7 @@ def validate_trap_base_data(token, serial):
     if not serial:
         logging.error("Fatal error no serial for pi")
         return False
-    if not isfile(BOOT_DATA_FILE_PATH):
+    if not path.exists(BOOT_DATA_FILE_PATH):
         file = open(BOOT_DATA_FILE_PATH, "w")
         json.dump(
             {'boot_count': 0, 'startup_time': 0,

@@ -222,9 +222,10 @@ def send_image(token, trap_id, test_mode, startup_index, boot_count, config):
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
     run_time = get_trap_boot_data("run_time", config)
+    logging.info("run time is - : " + str(run_time))
     number_of_boots = startup_index * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
-            'runTime': run_time + calc_run_time(), 'numberOfBoots': number_of_boots}
+            'runTime': run_time , 'numberOfBoots': number_of_boots}
     headers = {"Authorization": "Bearer " + token}
     logging.info('Attempting to send Image')
     return requests.post(URL, data=body, headers=headers, timeout=120)
@@ -329,6 +330,7 @@ def main():
                 send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
             send_log_data(token, serial, datetime.today().weekday(), changed_trap_status, False)
             if changed_trap_status.get("turn_off"):
+                logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
 
     except Exception as e:

@@ -332,10 +332,12 @@ def main():
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
-        total_run_time = start_of_run - time.time()
-        config["run_time"] = total_run_time
+        total_current_run_time = time.time() - start_of_run
+        previous_run_time = config["run_time"]
+        over_all_run_time = total_current_run_time + previous_run_time
+        config["run_time"] = over_all_run_time
         update_config_file(config)
-        send_run_time(token, serial, total_run_time)
+        send_run_time(token, serial, over_all_run_time)
 
     except Exception as e:
         logging.exception(str(e))

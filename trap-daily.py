@@ -4,7 +4,7 @@ import base64
 from datetime import datetime
 from os import path
 from os import system
-from response_actions import change_battery, stay_on, update, send_log, get_trap_status
+from response_actions import change_battery, stay_on, update, send_log, get_trap_status, send_run_time
 from picamera import PiCamera
 from ctypes import * # Motorized 8mp line
 import time
@@ -332,6 +332,10 @@ def main():
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
+        total_run_time = start_of_run - time.time()
+        config["run_time"] = total_run_time
+        update_config_file(config)
+        send_run_time(token, serial, total_run_time)
 
     except Exception as e:
         logging.exception(str(e))

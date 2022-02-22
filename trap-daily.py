@@ -332,7 +332,7 @@ def main():
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
-        total_current_run_time = time.time() - start_of_run
+        total_current_run_time = (time.time() - start_of_run)/60
         previous_run_time = config["run_time"]
         over_all_run_time = total_current_run_time + previous_run_time
         config["run_time"] = over_all_run_time

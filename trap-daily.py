@@ -299,7 +299,7 @@ def main():
         update_trap_db_status(trap_status)
         config = get_trap_boot_data_config()
         if trap_status.get("change_battery"):
-            config["run_time"] = -1
+            config["run_time"] = 0
             update_config_file(config)
         test_mode = get_test_mode()
         if test_mode is None:

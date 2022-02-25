@@ -7,8 +7,6 @@ GITHUB_URL = 'https://github.com/gigalala/trap-scripts.git'
 LOG_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_log'
 STATUS_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_status'
 RUN_TIME_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_run_time'
-LOCAL_STATUS =  'http://192.168.1.106:3020/trap_status'
-LOCAL_RUN_TIME =  'http://192.168.1.106:3020/trap_run_time'
 
 
 def change_battery():
@@ -26,7 +24,6 @@ def send_log(token, trap_id, delete=False):
     if res.status_code == 200 and delete:
         os.remove('trap.log')
 
-
 def update(version='main'):
     branch = None
     if version:
@@ -37,12 +34,12 @@ def update(version='main'):
 
 
 def get_trap_status(token, trap_id):
-    res = requests.get(LOCAL_STATUS+"/"+trap_id,
+    res = requests.get(STATUS_URL+"/"+trap_id,
                         headers={"Authorization": "Bearer " + token}, timeout=10)
     if res.status_code == 200:
         return res.json()
 
 def send_run_time(token, trap_id, run_time):
-    res = requests.post(LOCAL_RUN_TIME, data={'trapId': trap_id, 'runTime': run_time},
+    res = requests.post(RUN_TIME_URL, data={'trapId': trap_id, 'runTime': run_time},
                         headers={"Authorization": "Bearer " + token}, timeout=10)
     return res.status_code

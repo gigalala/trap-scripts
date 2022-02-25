@@ -148,20 +148,6 @@ def wait_for_connectivity(start_of_run, pre_config):
     logging.info('Connected to internet')
     return True
 
-def send_request(old_time, body, headers):
-    while True:
-        try:
-            logging.info('Attempting to send request')
-            res = requests.post(URL, data=body, headers=headers, timeout=120)
-        except Exception as e:
-            time.sleep(CONNECTIVITY_SLEEP_TIME)
-            if time.time() - old_time > REBOOT_TIME:
-                logging.error(str(e) + " reached max retries. shutting off")
-                return False
-            logging.error(str(e) + " failed attempt at sending request")
-        else:
-            return res
-
 def set_startup_time(is_test, start_index):
     if is_test:
         return
@@ -232,6 +218,7 @@ def send_image(token, trap_id, test_mode, startup_index, boot_count, config):
 
 def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot_count, config):
     send_attempt = True
+    logging.info('Attempting to send request')
     while send_attempt:
         try:
             result = send_image(token, trap_id, test_mode, start_up_index, boot_count, config)
@@ -337,15 +324,12 @@ def main():
         over_all_run_time = round(total_current_run_time, 3) + previous_run_time
         config["run_time"] = over_all_run_time
         update_config_file(config)
+        logging.info("sending run time of total - " + str(over_all_run_time) + " minutes")
         send_run_time(token, serial, over_all_run_time)
 
     except Exception as e:
         logging.exception(str(e))
-#    if should_stay_on:
-#        time.sleep(STAY_ON_SLEEP)
-#    else:
-#        time.sleep(SLEEP_BEFORE_SHUTDOWN)
-#    system("shutdown now -h")
+    system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

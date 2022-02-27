@@ -189,7 +189,7 @@ def run_reboot(config, start_of_run):
         system('reboot')
 
 def calc_run_time(start_of_run):
-    return raound(time.time() - start_of_run, 3) / 60
+    return round(time.time() - start_of_run, 3) / 60
 
 def configure_logging(logging):
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'

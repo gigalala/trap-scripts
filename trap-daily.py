@@ -1,4 +1,4 @@
-# VERSION = 2.1
+
 import requests
 import base64
 from datetime import datetime
@@ -162,13 +162,13 @@ def set_startup_time(is_test, start_index):
             logging.info(line[14:])
     logging.info("Next startup time set to: " + str(start))
 
-def run_reboot(config):
+def run_reboot(config, start_of_run):
     logging.info('Run reboot')
     run_time = config["run_time"]
     boot_count = config["boot_count"]
     startup_time = config["startup_time"]
     image_taken_today = config["image_taken_today"]
-    run_time += calc_run_time()
+    run_time += calc_run_time(start_of_run)
     if boot_count == FAIL_REBOOT_ATTEMPTS:
         logging.info("Max reboots reached")
         startup_time += 1
@@ -188,10 +188,8 @@ def run_reboot(config):
         logging.info("Rebooting")
         system('reboot')
 
-#TODO
-def calc_run_time():
-    now = time.time()
-    return (now - 1) / 60
+def calc_run_time(start_of_run):
+    return raound(time.time() - start_of_run, 3) / 60
 
 def configure_logging(logging):
     logger_format = '%(asctime)s.%(msecs)03d %(levelname)s : %(message)s'
@@ -283,6 +281,7 @@ def main():
         pre_config = get_trap_boot_data_config()
         wait_for_connectivity(start_of_run, pre_config)
         trap_status = get_trap_status(token, serial)
+        logging.info("trap status - " + str(trap_status))
         update_trap_db_status(trap_status)
         config = get_trap_boot_data_config()
         if trap_status.get("change_battery"):
@@ -302,7 +301,6 @@ def main():
             set_startup_time(test_mode, start_up_index)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
-        send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
         should_stay_on = trap_status["stay_on"]
         while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
             logging.info("-----------TRAP IS STAYING ON CHECKING DATA AND PERFORMING TASKS-----------")
@@ -319,16 +317,18 @@ def main():
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
-        total_current_run_time = (time.time() - start_of_run)/60
+        total_current_run_time = calc_run_time(start_of_run)
         previous_run_time = config["run_time"]
         over_all_run_time = round(total_current_run_time, 3) + previous_run_time
         config["run_time"] = over_all_run_time
         update_config_file(config)
         logging.info("sending run time of total - " + str(over_all_run_time) + " minutes")
         send_run_time(token, serial, over_all_run_time)
+        send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
 
     except Exception as e:
         logging.exception(str(e))
+    time.sleep(SLEEP_BEFORE_SHUTDOWN)
     system("shutdown now -h")
 
 if __name__ == "__main__":

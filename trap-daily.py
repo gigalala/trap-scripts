@@ -317,6 +317,9 @@ def main():
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
+        if trap_status.get("requested_version"):
+            update(trap_status.get("requested_version"))
+            logging("trap updated to version - " + trap_status.get("requested_version"))
         total_current_run_time = calc_run_time(start_of_run)
         previous_run_time = config["run_time"]
         over_all_run_time = round(total_current_run_time, 3) + previous_run_time
@@ -325,11 +328,16 @@ def main():
         logging.info("sending run time of total - " + str(over_all_run_time) + " minutes")
         send_run_time(token, serial, over_all_run_time)
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
-
     except Exception as e:
+        config = get_trap_boot_data_config()
+        total_current_run_time = calc_run_time(start_of_run)
+        previous_run_time = config["run_time"]
+        over_all_run_time = round(total_current_run_time, 3) + previous_run_time
+        config["run_time"] = over_all_run_time
+        update_config_file(config)
         logging.exception(str(e))
-#    time.sleep(SLEEP_BEFORE_SHUTDOWN)
-#    system("shutdown now -h")
+    # time.sleep(SLEEP_BEFORE_SHUTDOWN)
+    # system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

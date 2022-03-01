@@ -319,8 +319,9 @@ def main():
                 should_stay_on = False
         version_update = trap_status.get("version_update")
         if version_update:
-            update(version_update)
-            logging("trap updated to version - " + str(version_update))
+            requested_version = trap_status.get('requested_version')
+            update(requested_version)
+            logging("trap updated to version - " + str(requested_version))
         total_current_run_time = calc_run_time(start_of_run)
         previous_run_time = config["run_time"]
         over_all_run_time = round(total_current_run_time, 3) + previous_run_time
@@ -337,8 +338,8 @@ def main():
         config["run_time"] = over_all_run_time
         update_config_file(config)
         logging.exception(str(e))
-    time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    system("shutdown now -h")
+    # time.sleep(SLEEP_BEFORE_SHUTDOWN)
+    # system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

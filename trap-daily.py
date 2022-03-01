@@ -205,7 +205,7 @@ def configure_logging(logging):
 
 def update_trap_data(db, data):
     my_file = open(db, "w")
-    logging.info("writing to :" + db +". with value: " + str(data))
+    logging.info("Writing to :" + db +". with value: " + str(data))
     my_file.write(str(data))
     my_file.close()
 
@@ -270,7 +270,7 @@ def get_trap_base_data():
 
 def get_trap_boot_data(data, config):
         boot_data = config[data]
-        logging.info('trap boot data for: ' + str(data) + '. is: ' + str(boot_data))
+        logging.info('Trap boot data for: ' + str(data) + '. is: ' + str(boot_data))
         return boot_data
 
 def send_log_data(token, serial, weekday, trap_status, delete_log = False):
@@ -279,14 +279,14 @@ def send_log_data(token, serial, weekday, trap_status, delete_log = False):
 
 def update_trap_version(trap_status):
     version_update = trap_status.get("version_update")
-    logging.info('should update version - ' + str(version_update))
+    logging.info('Should update version - ' + str(version_update))
     if version_update:
         requested_version = trap_status.get('requested_version')
         if update(requested_version) == 0:
             update_trap_data('release_version.db', requested_version)
-            logging.info("trap updated to version - " + str(requested_version))
+            logging.info("Trap updated to version - " + str(requested_version))
         else:
-            logging.error('failed to update version: ' + requested_version)
+            logging.error('Failed to update version: ' + requested_version)
 
 def update_trap_run_time(start_of_run, config,token=None, serial=None, should_send_runtime=False):
     total_current_run_time = calc_run_time(start_of_run)
@@ -294,7 +294,7 @@ def update_trap_run_time(start_of_run, config,token=None, serial=None, should_se
     over_all_run_time = round(total_current_run_time, 3) + previous_run_time
     config["run_time"] = over_all_run_time
     update_config_file(config)
-    logging.info("sending run time of total - " + str(over_all_run_time) + " minutes")
+    logging.info("Sending run time of total - " + str(over_all_run_time) + " minutes")
     if should_send_runtime:
         send_run_time(token, serial, over_all_run_time)
 
@@ -305,7 +305,7 @@ def main():
     try:
         token, serial = get_trap_base_data()
         logging.info('Trap-id:' + str(serial))
-        logging.info('trap version is: ' + str(get_trap_version()))
+        logging.info('Trap version is: ' + str(get_trap_version()))
         if not validate_trap_base_data(token, serial):
             return
         pre_config = get_trap_boot_data_config()
@@ -334,8 +334,8 @@ def main():
         should_stay_on = trap_status["stay_on"]
         while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
             logging.info("-----------TRAP IS STAYING ON CHECKING DATA AND PERFORMING TASKS-----------")
-            logging.info("now - " + str(time.time()) + " start of run - " + str(start_of_run) + " stay on for - " + str(
-                STAY_ON_SLEEP) + "start an now diff is = " + str(time.time() - start_of_run))
+            # logging.info("now - " + str(time.time()) + " start of run - " + str(start_of_run) + " stay on for - " + str(
+            #     STAY_ON_SLEEP) + "start an now diff is = " + str(time.time() - start_of_run))
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             changed_trap_status = get_trap_status(token, serial)
             logging.info("New changed status: " + str(changed_trap_status))
@@ -356,8 +356,8 @@ def main():
         if config:
             update_trap_run_time(start_of_run, config, False)
         logging.exception(str(e))
-    # time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    # system("shutdown now -h")
+    time.sleep(SLEEP_BEFORE_SHUTDOWN)
+    system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

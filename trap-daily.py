@@ -245,8 +245,8 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot
                 logging.error("Image was not sent - " + result.text)
 
 def update_trap_db_status(trap_status):
-    if trap_status.get("dev_mode") is not None:
-        update_trap_data("testMode.db", trap_status.get("dev_mode"))
+    if trap_status.get("test_mode") is not None:
+        update_trap_data("testMode.db", trap_status.get("test_mode"))
     if trap_status.get("focus"):
         update_trap_data("trap_focus.db", trap_status.get("focus"))
 
@@ -340,9 +340,10 @@ def main():
             changed_trap_status = get_trap_status(token, serial)
             logging.info("New changed status: " + str(changed_trap_status))
             update_trap_db_status(changed_trap_status)
+            is_test_mode = changed_trap_status.get('test_mode')
             if changed_trap_status.get("take_pic"):
                 take_pic()
-                send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
+                send_detection(token, serial, is_test_mode, start_of_run, start_up_index, boot_count, config)
             send_log_data(token, serial, datetime.today().weekday(), changed_trap_status, False)
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")

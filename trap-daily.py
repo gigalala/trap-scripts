@@ -88,6 +88,14 @@ def get_test_mode():
             return False
     return None
 
+def get_trap_version():
+    if path.exists('release_version.db'):
+        file = open('release_version.db', "r")
+        version = file.read().strip()
+        if version:
+            return version
+    return "main"
+
 def get_trap_boot_data_config():
     if path.isfile(BOOT_DATA_FILE_PATH):
         with open(BOOT_DATA_FILE_PATH) as file:
@@ -224,7 +232,7 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - start_of_run > REBOOT_TIME:
                 logging.error(str(e) + " reached max retries. shutting off")
-                run_reboot(config)
+                run_reboot(config, start_of_run)
                 return
             logging.error(str(e) + " failed attempt at sending request")
             logging.exception(str(e))
@@ -241,6 +249,8 @@ def update_trap_db_status(trap_status):
         update_trap_data("testMode.db", trap_status.get("dev_mode"))
     if trap_status.get("focus"):
         update_trap_data("trap_focus.db", trap_status.get("focus"))
+    if trap_status.get("version_update") and trap_status.get("requested_version"):
+        update_trap_data('release_version.db', trap_status.get("requested_version"))
 
 def validate_trap_base_data(token, serial):
     if not token:
@@ -318,6 +328,7 @@ def main():
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
         version_update = trap_status.get("version_update")
+        logging.info('should update version - ' + str(version_update))
         if version_update:
             requested_version = trap_status.get('requested_version')
             update(requested_version)

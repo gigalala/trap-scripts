@@ -7,7 +7,7 @@ GITHUB_URL = 'https://github.com/gigalala/trap-scripts.git'
 LOG_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_log'
 STATUS_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_status'
 RUN_TIME_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_run_time'
-LOCAL_TRAP_STATUS = 'https://192.168.1.106:3020/trap_status'
+LOCAL_TRAP_STATUS = 'http://192.168.1.106:3020/trap_status'
 
 
 def change_battery():

@@ -277,6 +277,27 @@ def send_log_data(token, serial, weekday, trap_status, delete_log = False):
     if trap_status["send_log"] or weekday == 6:
         send_log(token, serial, delete_log)
 
+def update_trap_version(trap_status):
+    version_update = trap_status.get("version_update")
+    logging.info('should update version - ' + str(version_update))
+    if version_update:
+        requested_version = trap_status.get('requested_version')
+        if update(requested_version) == 0:
+            update_trap_data('release_version.db', requested_version)
+            logging.info("trap updated to version - " + str(requested_version))
+        else:
+            logging.error('failed to update version: ' + requested_version)
+
+def update_trap_run_time(start_of_run, config,token=None, serial=None, should_send_runtime=False):
+    total_current_run_time = calc_run_time(start_of_run)
+    previous_run_time = config["run_time"]
+    over_all_run_time = round(total_current_run_time, 3) + previous_run_time
+    config["run_time"] = over_all_run_time
+    update_config_file(config)
+    logging.info("sending run time of total - " + str(over_all_run_time) + " minutes")
+    if should_send_runtime:
+        send_run_time(token, serial, over_all_run_time)
+
 def main():
     start_of_run = time.time()
     configure_logging(logging)
@@ -290,7 +311,7 @@ def main():
         pre_config = get_trap_boot_data_config()
         wait_for_connectivity(start_of_run, pre_config)
         trap_status = get_trap_status(token, serial)
-        logging.info("trap status - " + str(trap_status))
+        logging.info("Trap status Response - " + str(trap_status))
         update_trap_db_status(trap_status)
         config = get_trap_boot_data_config()
         if trap_status.get("change_battery"):
@@ -304,7 +325,7 @@ def main():
             config['image_taken_today'] = True
             update_config_file(config)
         start_up_index = get_trap_boot_data("startup_time", config)
-        logging.info("Startup time is: " + str(start_up_index))
+        logging.info("Startup index is: " + str(start_up_index))
         boot_count = get_trap_boot_data("boot_count", config)
         if boot_count == 0:
             set_startup_time(test_mode, start_up_index)
@@ -326,31 +347,13 @@ def main():
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
-        version_update = trap_status.get("version_update")
-        logging.info('should update version - ' + str(version_update))
-        if version_update:
-            requested_version = trap_status.get('requested_version')
-            if update(requested_version) == 0:
-                update_trap_data('release_version.db', requested_version)
-                logging.info("trap updated to version - " + str(requested_version))
-            else:
-                logging.error('failed to update version: ' + requested_version)
-                logging.exception(str(e))
-        total_current_run_time = calc_run_time(start_of_run)
-        previous_run_time = config["run_time"]
-        over_all_run_time = round(total_current_run_time, 3) + previous_run_time
-        config["run_time"] = over_all_run_time
-        update_config_file(config)
-        logging.info("sending run time of total - " + str(over_all_run_time) + " minutes")
-        send_run_time(token, serial, over_all_run_time)
+        update_trap_version(trap_status)
+        update_trap_run_time(start_of_run, config, token, serial, True)
         send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
     except Exception as e:
         config = get_trap_boot_data_config()
-        total_current_run_time = calc_run_time(start_of_run)
-        previous_run_time = config["run_time"]
-        over_all_run_time = round(total_current_run_time, 3) + previous_run_time
-        config["run_time"] = over_all_run_time
-        update_config_file(config)
+        if config:
+            update_trap_run_time(start_of_run, config, False)
         logging.exception(str(e))
     # time.sleep(SLEEP_BEFORE_SHUTDOWN)
     # system("shutdown now -h")

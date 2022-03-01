@@ -335,7 +335,8 @@ def main():
                 update_trap_data('release_version.db', requested_version)
                 logging("trap updated to version - " + str(requested_version))
             except Exception as e:
-                logging.exception('failed to update version: ' + 'requested_version.' +  str(e))
+                logging.error('failed to update version: ' + requested_version)
+                logging.exception(str(e))
         total_current_run_time = calc_run_time(start_of_run)
         previous_run_time = config["run_time"]
         over_all_run_time = round(total_current_run_time, 3) + previous_run_time

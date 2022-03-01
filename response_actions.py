@@ -13,10 +13,8 @@ LOCAL_TRAP_STATUS = 'https://192.168.1.106:3020/trap_status'
 def change_battery():
     return -1
 
-
 def stay_on():
     return True
-
 
 def send_log(token, trap_id, delete=False):
     my_files = {'file': open('trap.log', 'rb')}
@@ -30,9 +28,9 @@ def update(version='main'):
     if version:
         branch = version
     system('rm -rf trap-scripts')
-    system('git clone --branch ' + branch + " " + GITHUB_URL)
+    response_code = system('git clone --branch ' + branch + " " + GITHUB_URL)
     system('mv trap-scripts/* .')
-
+    return response_code
 
 def get_trap_status(token, trap_id):
     res = requests.get(LOCAL_TRAP_STATUS+"/"+trap_id,

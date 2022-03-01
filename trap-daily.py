@@ -249,8 +249,6 @@ def update_trap_db_status(trap_status):
         update_trap_data("testMode.db", trap_status.get("dev_mode"))
     if trap_status.get("focus"):
         update_trap_data("trap_focus.db", trap_status.get("focus"))
-    if trap_status.get("version_update") and trap_status.get("requested_version"):
-        update_trap_data('release_version.db', trap_status.get("requested_version"))
 
 def validate_trap_base_data(token, serial):
     if not token:
@@ -286,6 +284,7 @@ def main():
     try:
         token, serial = get_trap_base_data()
         logging.info('Trap-id:' + str(serial))
+        logging.info('trap version is: ' + str(get_trap_version()))
         if not validate_trap_base_data(token, serial):
             return
         pre_config = get_trap_boot_data_config()
@@ -331,8 +330,12 @@ def main():
         logging.info('should update version - ' + str(version_update))
         if version_update:
             requested_version = trap_status.get('requested_version')
-            update(requested_version)
-            logging("trap updated to version - " + str(requested_version))
+            try:
+                update(requested_version)
+                update_trap_data('release_version.db', requested_version)
+                logging("trap updated to version - " + str(requested_version))
+            except Exception as e:
+                logging.exception('failed to update version: ' + 'requested_version.' +  str(e))
         total_current_run_time = calc_run_time(start_of_run)
         previous_run_time = config["run_time"]
         over_all_run_time = round(total_current_run_time, 3) + previous_run_time

@@ -149,7 +149,7 @@ def take_pic():
 def wait_for_connectivity(start_of_run, pre_config):
     time.sleep(CONNECTIVITY_SLEEP_TIME)
     while not connected_to_internet():
-        logging.info("Sleeping for: " + CONNECTIVITY_SLEEP_TIME)
+        logging.info("Sleeping for: " + str(CONNECTIVITY_SLEEP_TIME))
         time.sleep(CONNECTIVITY_SLEEP_TIME)
         if time.time() - start_of_run > REBOOT_TIME:
             return run_reboot(pre_config)
@@ -282,11 +282,16 @@ def update_trap_version(trap_status):
     logging.info('Should update version - ' + str(version_update))
     if version_update:
         requested_version = trap_status.get('requested_version')
-        if update(requested_version) == 0:
-            update_trap_data('release_version.db', requested_version)
-            logging.info("Trap updated to version - " + str(requested_version))
+        if requested_version:
+            if update(requested_version) == 0:
+                update_trap_data('release_version.db', requested_version)
+                logging.info("Trap updated to version - " + str(requested_version))
+            else:
+                logging.error('Failed to update version: ' + requested_version)
         else:
-            logging.error('Failed to update version: ' + requested_version)
+            update()
+            update_trap_data('release_version.db', 'main')
+            logging.info("Trap updated to default version 'main'")
 
 def update_trap_run_time(start_of_run, config,token=None, serial=None, should_send_runtime=False):
     total_current_run_time = calc_run_time(start_of_run)

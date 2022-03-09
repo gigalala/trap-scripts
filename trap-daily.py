@@ -299,9 +299,9 @@ def update_trap_run_time(start_of_run, config,token=None, serial=None, should_se
     over_all_run_time = round(total_current_run_time, 3) + previous_run_time
     config["run_time"] = over_all_run_time
     update_config_file(config)
-    logging.info("Sending run time of total - " + str(over_all_run_time) + " minutes")
+    logging.info("Sending run time of total - " + str(round(over_all_run_time), 3) + " minutes")
     if should_send_runtime:
-        send_run_time(token, serial, over_all_run_time)
+        send_run_time(token, serial, round(over_all_run_time), 3)
 
 def main():
     start_of_run = time.time()

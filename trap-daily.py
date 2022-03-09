@@ -82,9 +82,9 @@ def get_test_mode():
         file.close()
         if not test_mode:
             return None
-        if test_mode == "True":
+        if test_mode.lower() == "true":
             return True
-        elif test_mode == "False":
+        elif test_mode.lower() == "false":
             return False
     return None
 

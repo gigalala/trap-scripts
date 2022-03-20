@@ -336,6 +336,8 @@ def main():
             set_startup_time(test_mode, start_up_index)
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
+        config['image_taken_today'] = False
+        update_config_file(config)
         should_stay_on = trap_status["stay_on"]
         while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
             logging.info("-----------TRAP IS STAYING ON CHECKING DATA AND PERFORMING TASKS-----------")

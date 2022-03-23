@@ -70,14 +70,16 @@ if [[ "$option" == 1 ]] ;then
     echo 'Setting timezone'
     sudo timedatectl set-timezone Asia/Jerusalem
     echo date
+    echo 'Shutting Down HDMI for battery improvements'
+    sudo /opt/vc/bin/tvservice -o
     echo 'Installing new trap'
     #Downloading files
     echo 'Downloading files'
     echo "Downloading schedules"
     echo 'Downloading image scripts'
     wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/takePic.sh' -O takePic.sh
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/trap-daily.py' -O trap-daily.py
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/response_actions.py' -O response_actions.py
+    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/add-support-for-remote-focus/trap-daily.py' -O trap-daily.py
+    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/add-support-for-remote-focus/response_actions.py' -O response_actions.py
 
     #install pip and and python modules 
     echo 'Getting pip and python modules if needed'

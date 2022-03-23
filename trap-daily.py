@@ -340,7 +340,7 @@ def main():
         config['startup_time'] = 1
         set_startup_time(test_mode, 0)
         update_config_file(config)
-        should_stay_on = trap_status["stay_on"]
+        should_stay_on = trap_status.get("stay_on")
         while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
             logging.info("-----------TRAP IS STAYING ON CHECKING DATA AND PERFORMING TASKS-----------")
             # logging.info("now - " + str(time.time()) + " start of run - " + str(start_of_run) + " stay on for - " + str(

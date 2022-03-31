@@ -98,8 +98,8 @@ if [[ "$option" == 1 ]] ;then
     #Downloading autofocus software
     echo 'Downloading autofocus software'
     git clone https://github.com/ArduCAM/RaspberryPi.git
+    git checkout legacy_version
     wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/Autofocus.sh' -O RaspberryPi/Motorized_Focus_Camera/python/Autofocus.py
-
 
     #Disable auto-login
     echo 'Disable auto-login if exisits in system'
@@ -152,7 +152,8 @@ elif [[ "$option" == 2 ]]; then
     1
     11
 EOF
-    set_dummy_load
+    read -p "Should set Dummy load? (y/n) " yn
+    if [[ "$yn" == 'y' ]]; then set_dummy_load; break; fi
     show_witty_stats
     echo 'Done.........';
 
@@ -176,7 +177,9 @@ elif [[ "$option" == 3 ]]; then
     1
     11
 EOF
-set_dummy_load
+read -p "Should set Dummy load? (y/n) " yn
+if [[ "$yn" == 'y' ]]; then set_dummy_load; break; fi
+
 show_witty_stats
 echo 'Done.........';
 

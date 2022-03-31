@@ -273,8 +273,8 @@ def get_trap_boot_data(data, config):
         logging.info('Trap boot data for: ' + str(data) + '. is: ' + str(boot_data))
         return boot_data
 
-def send_log_data(token, serial, weekday, trap_status, delete_log = False):
-    if trap_status["send_log"] or weekday == 6:
+def send_log_data(token, serial, weekday, send_log_request, delete_log = False):
+    if send_log_request or weekday == 6:
         send_log(token, serial, delete_log)
 
 def update_trap_version(trap_status):
@@ -306,6 +306,9 @@ def update_trap_run_time(start_of_run, config,token=None, serial=None, should_se
 def main():
     start_of_run = time.time()
     configure_logging(logging)
+    internet_connection= False
+    token, serial = None, None
+    config = None
     logging.info("========================STARTING NEW WAKEUP LOG========================")
     try:
         token, serial = get_trap_base_data()
@@ -314,7 +317,7 @@ def main():
         if not validate_trap_base_data(token, serial):
             return
         pre_config = get_trap_boot_data_config()
-        wait_for_connectivity(start_of_run, pre_config)
+        internet_connection = wait_for_connectivity(start_of_run, pre_config)
         trap_status = get_trap_status(token, serial)
         logging.info("Trap status Response - " + str(trap_status))
         update_trap_db_status(trap_status)
@@ -353,18 +356,19 @@ def main():
             if changed_trap_status.get("take_pic"):
                 take_pic()
                 send_detection(token, serial, is_test_mode, start_of_run, start_up_index, boot_count, config)
-            send_log_data(token, serial, datetime.today().weekday(), changed_trap_status, False)
+            send_log_data(token, serial, datetime.today().weekday(), changed_trap_status.get("send_log"), False)
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
         update_trap_version(trap_status)
         update_trap_run_time(start_of_run, config, token, serial, True)
-        send_log_data(token, serial, datetime.today().weekday(), trap_status, False)
+        send_log_data(token, serial, datetime.today().weekday(), trap_status.get("send_log"), False)
     except Exception as e:
-        config = get_trap_boot_data_config()
         if config:
             update_trap_run_time(start_of_run, config, False)
         logging.exception(str(e))
+        if internet_connection and token and serial:
+            send_log_data(token, serial, datetime.today().weekday(), True, False)
     time.sleep(SLEEP_BEFORE_SHUTDOWN)
     system("shutdown now -h")
 

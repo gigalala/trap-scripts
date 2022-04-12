@@ -99,7 +99,7 @@ if [[ "$option" == 1 ]] ;then
     echo 'Downloading autofocus software'
     git clone https://github.com/ArduCAM/RaspberryPi.git --branch legacy_version
 
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/Autofocus.sh' -O RaspberryPi/Motorized_Focus_Camera/python/Autofocus.py
+    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/Autofocus.py' -O RaspberryPi/Motorized_Focus_Camera/python/Autofocus.py
 
     #Disable auto-login
     echo 'Disable auto-login if exisits in system'

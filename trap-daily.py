@@ -63,7 +63,7 @@ def get_focus_value():
         file.close()
         if not focus:
             return None
-    return focus
+    return int(focus)
 
 def get_token():
     token_trap = None

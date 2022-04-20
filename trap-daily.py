@@ -5,6 +5,7 @@ from datetime import datetime
 from os import path
 from os import system
 from response_actions import change_battery, stay_on, update, send_log, get_trap_status, send_run_time
+from Autofocus import get_focus
 from picamera import PiCamera
 from ctypes import * # Motorized 8mp line
 import time
@@ -55,8 +56,13 @@ def get_camera_type():
             return None
     return camera_five == "true"
 
-def get_focus_value():
+def get_focus_value(should_focus=False):
     focus = FOCUS_VAL
+    if should_focus:
+        focus = get_focus()
+        logging.info("using auto-focus. value for auto is: " + str(focus))
+        update_trap_data("trap_focus.db", focus)
+        return focus
     if path.exists('trap_focus.db'):
         file = open('trap_focus.db', "r")
         focus = file.read().strip()
@@ -121,9 +127,9 @@ def write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today):
          'run_time': run_time, 'image_taken_today': image_taken_today}, file)
     file.close()
 
-def take_pic():
+def take_pic(trap_status):
     is_five_mega = get_camera_type()
-    focus_value = get_focus_value()
+    focus_value = get_focus_value(trap_status.get("auto_focus"))
     logging.info("Starting camera process with - " + (
         "5 mega pixel." if is_five_mega else "8 mega pixel.") + " with focus value:" + str(focus_value))
     camera_res = (2592, 1944)
@@ -329,7 +335,7 @@ def main():
         if test_mode is None:
             return
         if not get_trap_boot_data("image_taken_today", config):
-            take_pic()
+            take_pic(trap_status)
             config['image_taken_today'] = True
             update_config_file(config)
         start_up_index = get_trap_boot_data("startup_time", config)
@@ -354,7 +360,7 @@ def main():
             update_trap_db_status(changed_trap_status)
             is_test_mode = changed_trap_status.get('test_mode')
             if changed_trap_status.get("take_pic"):
-                take_pic()
+                take_pic(changed_trap_status)
                 send_detection(token, serial, is_test_mode, start_of_run, start_up_index, boot_count, config)
             send_log_data(token, serial, datetime.today().weekday(), changed_trap_status.get("send_log"), False)
             if changed_trap_status.get("turn_off"):

@@ -5,7 +5,7 @@ import time
 from ctypes import *
 
 # load arducam shared object file
-arducam_vcm = CDLL('./lib/libarducam_vcm.so')
+arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')
 try:
     import picamera
     from picamera.array import PiRGBArray

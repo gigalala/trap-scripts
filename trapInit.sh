@@ -70,14 +70,16 @@ if [[ "$option" == 1 ]] ;then
     echo 'Setting timezone'
     sudo timedatectl set-timezone Asia/Jerusalem
     echo date
+    echo 'Shutting Down HDMI for battery improvements'
+    sudo /opt/vc/bin/tvservice -o
     echo 'Installing new trap'
     #Downloading files
     echo 'Downloading files'
     echo "Downloading schedules"
     echo 'Downloading image scripts'
     wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/takePic.sh' -O takePic.sh
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/trap-daily.py' -O trap-daily.py
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/response_actions.py' -O response_actions.py
+    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/add-support-for-remote-focus/trap-daily.py' -O trap-daily.py
+    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/add-support-for-remote-focus/response_actions.py' -O response_actions.py
 
     #install pip and and python modules 
     echo 'Getting pip and python modules if needed'
@@ -95,9 +97,9 @@ if [[ "$option" == 1 ]] ;then
 
     #Downloading autofocus software
     echo 'Downloading autofocus software'
-    git clone https://github.com/ArduCAM/RaspberryPi.git
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/Autofocus.sh' -O RaspberryPi/Motorized_Focus_Camera/python/Autofocus.py
+    git clone https://github.com/ArduCAM/RaspberryPi.git --branch legacy_version
 
+    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/add-support-for-remote-focus/Autofocus.py' -O Autofocus.py
 
     #Disable auto-login
     echo 'Disable auto-login if exisits in system'
@@ -150,7 +152,8 @@ elif [[ "$option" == 2 ]]; then
     1
     11
 EOF
-    set_dummy_load
+    read -p "Should set Dummy load? (y/n) " yn
+    if [[ "$yn" == 'y' ]]; then set_dummy_load; break; fi
     show_witty_stats
     echo 'Done.........';
 
@@ -174,7 +177,9 @@ elif [[ "$option" == 3 ]]; then
     1
     11
 EOF
-set_dummy_load
+read -p "Should set Dummy load? (y/n) " yn
+if [[ "$yn" == 'y' ]]; then set_dummy_load; break; fi
+
 show_witty_stats
 echo 'Done.........';
 

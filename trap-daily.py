@@ -176,6 +176,23 @@ def set_startup_time(is_test, start_index):
             logging.info(line[14:])
     logging.info("Next startup time set to: " + str(start))
 
+def set_dummy_load(remove_dummy_load):
+    if remove_dummy_load is None:
+        logging.warn("Should update dummy load, but no dummy load in request")
+        return
+    dummy_load = 0 if remove_dummy_load else 25
+    logging.info("Attempting to update dummy load to: " + str(dummy_load))
+    try:
+        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        command = "9\n 5\n" + str(dummy_load) + "\n11"
+        stdout, stderr = p.communicate(input=command)
+    except Exception as e:
+        logging.error(str(e) + " failed to update dummy load")
+        logging.exception(str(e))
+    else:
+        logging.info("updated dummy load to :" + str(dummy_load))
+
+
 def run_reboot(config, start_of_run):
     logging.info('Run reboot')
     run_time = config["run_time"]
@@ -326,6 +343,8 @@ def main():
         internet_connection = wait_for_connectivity(start_of_run, pre_config)
         trap_status = get_trap_status(token, serial)
         logging.info("Trap status Response - " + str(trap_status))
+        if trap_status.get("update_dummy_load"):
+            set_dummy_load(trap_status.get("remove_dummy_load"))
         update_trap_db_status(trap_status)
         config = get_trap_boot_data_config()
         if trap_status.get("change_battery"):

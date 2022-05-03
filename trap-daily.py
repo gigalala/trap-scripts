@@ -158,7 +158,7 @@ def wait_for_connectivity(start_of_run, pre_config):
         logging.info("Sleeping for: " + str(CONNECTIVITY_SLEEP_TIME))
         time.sleep(CONNECTIVITY_SLEEP_TIME)
         if time.time() - start_of_run > REBOOT_TIME:
-            return run_reboot(pre_config)
+            return run_reboot(pre_config, start_of_run)
     logging.info('Connected to internet')
     return True
 

@@ -389,11 +389,14 @@ def main():
         update_trap_run_time(start_of_run, config, token, serial, True)
         send_log_data(token, serial, datetime.today().weekday(), trap_status.get("send_log"), False)
     except Exception as e:
-        if config:
-            update_trap_run_time(start_of_run, config, False)
-        logging.exception(str(e))
-        if internet_connection and token and serial:
-            send_log_data(token, serial, datetime.today().weekday(), True, False)
+        try:
+            if config:
+                update_trap_run_time(start_of_run, config, False)
+            logging.exception(str(e))
+            if internet_connection and token and serial:
+                send_log_data(token, serial, datetime.today().weekday(), True, False)
+        except Exception as e:
+            logging.exception(str(e))
     time.sleep(SLEEP_BEFORE_SHUTDOWN)
     system("shutdown now -h")
 

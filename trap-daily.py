@@ -390,11 +390,11 @@ def main():
         send_log_data(token, serial, datetime.today().weekday(), trap_status.get("send_log"), False)
     except Exception as e:
         try:
-            if config:
-                update_trap_run_time(start_of_run, config, False)
             logging.exception(str(e))
             if internet_connection and token and serial:
                 send_log_data(token, serial, datetime.today().weekday(), True, False)
+                if config:
+                    update_trap_run_time(start_of_run, config, False)
         except Exception as e:
             logging.exception(str(e))
     time.sleep(SLEEP_BEFORE_SHUTDOWN)

@@ -376,7 +376,7 @@ def set_pre_run_data(pre_config):
     logging.info('Setting pre-run data for trap')
     start_up_index = get_trap_boot_data("startup_time", pre_config)
     set_startup_time(pre_run_test_mode, start_up_index)
-    set_emergency_shutdow()
+    set_emergency_shutdown()
 
 def main():
     start_of_run = time.time()

@@ -13,6 +13,7 @@ import logging
 import subprocess
 import json
 import trap
+import sys
 
 FOCUS_VAL = 202 # Motorized 8mp line
 

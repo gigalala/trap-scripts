@@ -372,9 +372,10 @@ def set_emergency_shutdown():
     p.communicate(input=command)
 
 def set_pre_run_data(pre_config):
+    pre_run_test_mode = get_test_mode()
     logging.info('Setting pre-run data for trap')
     start_up_index = get_trap_boot_data("startup_time", pre_config)
-    set_startup_time(test_mode, start_up_index)
+    set_startup_time(pre_run_test_mode, start_up_index)
     set_emergency_shutdow()
 
 def main():

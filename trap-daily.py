@@ -212,7 +212,9 @@ def run_reboot(config, start_of_run):
             set_startup_time(False, 0)
         boot_count = 0
         write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today)
+        logging.info("Shutting Down - next startup time is " + str(STARTUP_TIMES[startup_time]))
         system("shutdown now -h")
+        sys.exit()
 
     else:
         boot_count += 1
@@ -220,7 +222,8 @@ def run_reboot(config, start_of_run):
         time.sleep(5)
         logging.info("Rebooting")
         system('reboot')
-        time.sleep(5)
+        sys.exit()
+
 
 def calc_run_time(start_of_run):
     return round(time.time() - start_of_run, 3) / 60
@@ -355,7 +358,7 @@ def update_trap_run_time(start_of_run, config, token=None, serial=None, should_s
         safe_send_runtime(token, serial, round(over_all_run_time, 3))
 
 def attempt_get_trap_status(token, serial):
-    trap_status = None
+    trap_status = {}
     logging.info('Attempting to get trap status')
     try:
         trap_status = get_trap_status(token, serial)
@@ -366,15 +369,15 @@ def attempt_get_trap_status(token, serial):
     return trap_status
 
 def set_emergency_shutdown():
-    logging.info('Setting pre-run emergency shutdown')
+    logging.info('Setting pre-run emergency shutdown to - ??:15')
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     command = "5\n?? ??:15 \n11\n"
     p.communicate(input=command)
 
 def set_pre_run_data(pre_config):
     pre_run_test_mode = get_test_mode()
-    logging.info('Setting pre-run data for trap')
     start_up_index = get_trap_boot_data("startup_time", pre_config)
+    logging.info('Setting pre-run data for trap with start_up_time ' + str(STARTUP_TIMES[start_up_index]))
     set_startup_time(pre_run_test_mode, start_up_index)
     set_emergency_shutdown()
 
@@ -384,7 +387,7 @@ def main():
     internet_connection = False
     token, serial = None, None
     config = None
-    trap_status = None
+    trap_status = {}
     logging.info("========================STARTING NEW WAKEUP LOG========================")
     try:
         token, serial = get_trap_base_data()

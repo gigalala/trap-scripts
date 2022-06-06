@@ -13,7 +13,6 @@ import logging
 import subprocess
 import json
 import trap
-import sys
 
 FOCUS_VAL = 202 # Motorized 8mp line
 
@@ -215,7 +214,7 @@ def run_reboot(config, start_of_run):
         write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today)
         logging.info("Shutting Down - next startup time is " + str(STARTUP_TIMES[startup_time]))
         system("shutdown now -h")
-        sys.exit()
+        exit()
 
     else:
         boot_count += 1
@@ -223,7 +222,7 @@ def run_reboot(config, start_of_run):
         time.sleep(5)
         logging.info("Rebooting")
         system('reboot')
-        sys.exit()
+        exit()
 
 
 def calc_run_time(start_of_run):

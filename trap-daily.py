@@ -154,7 +154,8 @@ def take_pic(trap_status):
 
 def wait_for_connectivity(start_of_run, pre_config):
     time.sleep(CONNECTIVITY_SLEEP_TIME)
-    while not connected_to_internet():
+    # while not connected_to_internet():
+    while True:
         logging.info("Sleeping for: " + str(CONNECTIVITY_SLEEP_TIME))
         time.sleep(CONNECTIVITY_SLEEP_TIME)
         if time.time() - start_of_run > REBOOT_TIME:
@@ -165,7 +166,7 @@ def wait_for_connectivity(start_of_run, pre_config):
     return True
 
 def set_startup_time(is_test, start_index):
-    # if is_test:
+    # if is_test: TODO
     #     return
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[start_index]
@@ -399,7 +400,7 @@ def main():
             return
         pre_config = get_trap_boot_data_config()
         set_pre_run_data(pre_config)
-        internet_connection = False #wait_for_connectivity(start_of_run, pre_config)
+        internet_connection = wait_for_connectivity(start_of_run, pre_config)
         # current_trap.set_connectivity(internet_connection)
         if internet_connection:
             trap_status = attempt_get_trap_status(token, serial)

@@ -16,7 +16,7 @@ import trap
 
 FOCUS_VAL = 202 # Motorized 8mp line
 
-FAIL_REBOOT_ATTEMPTS = 2
+FAIL_REBOOT_ATTEMPTS = 1
 REBOOT_TIME = 200  # 2 minutes
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
 SLEEP_BEFORE_SHUTDOWN = 5  # 5 seconds
@@ -158,7 +158,7 @@ def wait_for_connectivity(start_of_run, pre_config):
     while True:
         logging.info("Sleeping for: " + str(CONNECTIVITY_SLEEP_TIME))
         time.sleep(CONNECTIVITY_SLEEP_TIME)
-        if time.time() - start_of_run > REBOOT_TIME:
+        if time.time() - start_of_run >= REBOOT_TIME:
             logging.error('Didnt connect to the internet, will reboot at end of run')
             return False
             # run_reboot(pre_config, start_of_run)
@@ -363,6 +363,7 @@ def attempt_get_trap_status(token, serial):
     trap_status = {}
     logging.info('Attempting to get trap status')
     try:
+        v = 1/0
         trap_status = get_trap_status(token, serial)
     except Exception as e:
         logging.error('failed to get trap status')
@@ -422,7 +423,8 @@ def main():
         if not internet_connection:
             run_reboot(config, start_of_run)
 
-        logging.info("should never reach this code")
+        logging.warn("should never get here")
+        # logging.info("Has internet, not reboot attempting to send image---")
         # TODO
 
 

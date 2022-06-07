@@ -363,16 +363,16 @@ def attempt_get_trap_status(token, serial):
     trap_status = {}
     logging.info('Attempting to get trap status')
     try:
-        trap_status = get_trap_status(token, serial)
+        trap_status, status_code = get_trap_status(token, serial)
     except Exception as e:
         logging.error('failed to get trap status')
         logging.exception(str(e))
     else:
-        if trap_status.status_code == 200:
+        if status_code == 200:
             logging.info("Trap status Response - " + str(trap_status))
         else:
-            logging.error("Trap status returned error - " + str(trap_status.text))
-    return trap_status.json
+            logging.error("Trap status returned error - " + str(status_code))
+    return trap_status
 
 def set_emergency_shutdown():
     logging.info('Setting pre-run emergency shutdown to - ??:15')

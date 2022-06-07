@@ -159,7 +159,7 @@ def wait_for_connectivity(start_of_run, pre_config):
         logging.info("Sleeping for: " + str(CONNECTIVITY_SLEEP_TIME))
         time.sleep(CONNECTIVITY_SLEEP_TIME)
         now = time.time()
-        logging.info("current time: " + str(now) + "start of run: " + str(start_of_run) + "diff = " + str(now - start_of_run))
+        logging.info("current time: " + str(now) + ". start of run: " + str(start_of_run) + ". diff = " + str(start_of_run - now))
         if now - start_of_run == REBOOT_TIME:
             logging.error('Didnt connect to the internet, will reboot at end of run')
             return False

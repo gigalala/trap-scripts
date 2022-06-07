@@ -154,12 +154,10 @@ def take_pic(trap_status):
 
 def wait_for_connectivity(start_of_run, pre_config):
     time.sleep(CONNECTIVITY_SLEEP_TIME)
-    # while not connected_to_internet():
-    while True:
+    while not connected_to_internet():
         logging.info("Sleeping for: " + str(CONNECTIVITY_SLEEP_TIME))
         time.sleep(CONNECTIVITY_SLEEP_TIME)
         now = time.time()
-        logging.info("current time: " + str(now) + ". start of run: " + str(start_of_run) + ". diff = " + str(now - start_of_run))
         if now - start_of_run > REBOOT_TIME:
             logging.error('Didnt connect to the internet, will reboot at end of run')
             return False
@@ -425,8 +423,8 @@ def main():
         if not internet_connection:
             run_reboot(config, start_of_run)
 
-        logging.warn("should never get here")
-        # logging.info("Has internet, not reboot attempting to send image---")
+        # logging.warn("should never get here")
+        logging.info("Has internet, not reboot attempting to send image---")
         # TODO
 
 
@@ -471,7 +469,7 @@ def main():
         except Exception as e:
             logging.exception(str(e))
     time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    system("shutdown now -h")
+    # system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

@@ -18,7 +18,7 @@ FOCUS_VAL = 202 # Motorized 8mp line
 
 FAIL_REBOOT_ATTEMPTS = 1
 REBOOT_TIME = 200  # 2 minutes
-CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
+CONNECTIVITY_SLEEP_TIME = 5  # 10 sec
 SLEEP_BEFORE_SHUTDOWN = 5  # 5 seconds
 STAY_ON_SLEEP = 600  # 10 minutes
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
@@ -158,7 +158,9 @@ def wait_for_connectivity(start_of_run, pre_config):
     while True:
         logging.info("Sleeping for: " + str(CONNECTIVITY_SLEEP_TIME))
         time.sleep(CONNECTIVITY_SLEEP_TIME)
-        if time.time() - start_of_run >= REBOOT_TIME:
+        now = time.time()
+        logging.info("current time: " + str(now) + "start of run: " + str(start_of_run) + "diff = " + str(now - start_of_run))
+        if now - start_of_run == REBOOT_TIME:
             logging.error('Didnt connect to the internet, will reboot at end of run')
             return False
             # run_reboot(pre_config, start_of_run)

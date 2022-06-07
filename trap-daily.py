@@ -165,8 +165,8 @@ def wait_for_connectivity(start_of_run, pre_config):
     return True
 
 def set_startup_time(is_test, start_index):
-    if is_test:
-        return
+    # if is_test:
+    #     return
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[start_index]
     command = "5\n?? " + start + "\n11\n"
@@ -205,6 +205,7 @@ def run_reboot(config, start_of_run):
     if boot_count == FAIL_REBOOT_ATTEMPTS:
         logging.info("Max reboots reached")
         startup_time += 1
+        set_startup_time(False, startup_time)
         if startup_time == len(STARTUP_TIMES):
             logging.info("No new startup time for today, setting time for tomorrow")
             startup_time = 1

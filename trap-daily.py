@@ -311,10 +311,10 @@ def safe_send_log_data(token, serial, delete_log = False):
         logging.error('Failed to send log - exception thrown')
         logging.exception(str(e))
     else:
-        if result.status_code == 200:
+        if result == 200:
             logging.info("Sent log sent successfully!")
         else:
-            logging.error("Failed to send runtime - error returned" + str(result.status_code))
+            logging.error("Failed to send log - error returned" + str(result))
 
 
 def send_log_data(token, serial, weekday, send_log_request, delete_log = False):
@@ -344,10 +344,10 @@ def safe_send_runtime(token, serial, overall_run_time):
         logging.error('failed to get trap status')
         logging.exception(str(e))
     else:
-        if result.status_code == 200:
+        if result == 200:
             logging.info("sent runtime sent successfully")
         else:
-            logging.error("failed to send runtime - error returned" + str(result.status_code))
+            logging.error("failed to send runtime - error returned" + str(result))
 
 def update_trap_run_time(start_of_run, config, token=None, serial=None, should_send_runtime=False):
     total_current_run_time = calc_run_time(start_of_run)
@@ -363,12 +363,15 @@ def attempt_get_trap_status(token, serial):
     trap_status = {}
     logging.info('Attempting to get trap status')
     try:
-        v = 1/0
         trap_status = get_trap_status(token, serial)
     except Exception as e:
         logging.error('failed to get trap status')
         logging.exception(str(e))
-    logging.info("Trap status Response - " + str(trap_status))
+    else:
+        if trap_status.status_code == 200:
+            logging.info("Trap status Response - " + str(trap_status))
+        else:
+            logging.error("Trap status returned error - " + str(trap_status.text))
     return trap_status
 
 def set_emergency_shutdown():

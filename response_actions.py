@@ -35,8 +35,7 @@ def update(version='main'):
 def get_trap_status(token, trap_id):
     res = requests.get(STATUS_URL+"/"+trap_id,
                         headers={"Authorization": "Bearer " + token}, timeout=10)
-    if res.status_code == 200:
-        return res.json()
+    return res
 
 def send_run_time(token, trap_id, run_time):
     res = requests.post(RUN_TIME_URL, data={'trapId': trap_id, 'runTime': run_time},

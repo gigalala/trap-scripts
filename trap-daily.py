@@ -372,7 +372,7 @@ def attempt_get_trap_status(token, serial):
             logging.info("Trap status Response - " + str(trap_status))
         else:
             logging.error("Trap status returned error - " + str(trap_status.text))
-    return trap_status
+    return trap_status.json
 
 def set_emergency_shutdown():
     logging.info('Setting pre-run emergency shutdown to - ??:15')
@@ -419,6 +419,7 @@ def main():
         test_mode = get_test_mode()
         if test_mode is None:
             return
+        logging.info("Mode is : " + ("production" if not test_mode else "test"))
         if not get_trap_boot_data("image_taken_today", config):
             take_pic(trap_status)
             config['image_taken_today'] = True
@@ -436,7 +437,6 @@ def main():
         boot_count = get_trap_boot_data("boot_count", config)
         if boot_count == 0:
             set_startup_time(test_mode, start_up_index)
-        logging.info("Mode is : " + ("production" if not test_mode else "test"))
         if internet_connection:
             send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
         config['image_taken_today'] = False

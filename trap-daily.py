@@ -262,8 +262,8 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - start_of_run > REBOOT_TIME:
                 logging.error(str(e) + " reached max retries. shutting off")
-                run_reboot(config, start_of_run)
-                return
+                # run_reboot(config, start_of_run)
+                return False
             logging.error(str(e) + " failed attempt at sending request")
             logging.exception(str(e))
         else:
@@ -271,8 +271,10 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot
                 data = result.json()
                 logging.info('Image sent! response data: ' + str(data))
                 send_attempt = False
+                return True
             else:
                 logging.error("Image was not sent - " + result.text)
+                return False
 
 def update_trap_db_status(trap_status):
     if trap_status.get("test_mode") is not None:
@@ -302,7 +304,6 @@ def get_trap_boot_data(data, config):
         boot_data = config[data]
         logging.info('Trap boot data for: ' + str(data) + '. is: ' + str(boot_data))
         return boot_data
-
 
 def safe_send_log_data(token, serial, delete_log = False):
     try:
@@ -392,14 +393,17 @@ def main():
     configure_logging(logging)
     internet_connection = False
     token, serial = None, None
+    detection_sent = False
     config = None
     trap_status = {}
     logging.info("========================STARTING NEW WAKEUP LOG========================")
     try:
         token, serial = get_trap_base_data()
-        # current_trap = trap(token, serial, start_of_run, FOCUS_VAL)
-        logging.info('Trap-id:' + str(serial))
-        logging.info('Trap version is: ' + str(get_trap_version()))
+        # current_trap = trap(token, serial, start_of_run, FOCUS_VAL, get_trap_version())
+        logging.info('TRAP-ID:' + str(serial))
+        # logging.info('TRAP-ID: ' + current_trap.get_trap_id())
+        logging.info('TRAP-VERSION: ' + str(get_trap_version()))
+        # logging.info('TRAP-VERSION: ' + current_trap.get_trap_version())
         if not validate_trap_base_data(token, serial):
             return
         pre_config = get_trap_boot_data_config()
@@ -427,18 +431,17 @@ def main():
         if not internet_connection:
             run_reboot(config, start_of_run)
 
-        # logging.warn("should never get here")
-        logging.info("Has internet, not reboot attempting to send image---")
-        # TODO
-
-
         start_up_index = get_trap_boot_data("startup_time", config)
         # logging.info("Startup index is: " + str(start_up_index))
         boot_count = get_trap_boot_data("boot_count", config)
         if boot_count == 0:
             set_startup_time(test_mode, start_up_index)
         if internet_connection:
-            send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
+            detection_sent = send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
+
+        if not detection_sent:
+            run_reboot(config, start_of_run)
+
         config['image_taken_today'] = False
         config['startup_time'] = 1
         set_startup_time(test_mode, 0)

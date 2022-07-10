@@ -166,8 +166,8 @@ def wait_for_connectivity(start_of_run, pre_config):
     return True
 
 def set_startup_time(is_test, start_index):
-    # if is_test: TODO
-    #     return
+    if is_test:
+        return
     p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     start = STARTUP_TIMES[start_index]
     command = "5\n?? " + start + "\n11\n"
@@ -475,7 +475,7 @@ def main():
         except Exception as e:
             logging.exception(str(e))
     time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    # system("shutdown now -h")
+    system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

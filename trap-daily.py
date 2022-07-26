@@ -205,8 +205,8 @@ def run_reboot(config, start_of_run):
     run_time += calc_run_time(start_of_run)
     if boot_count >= FAIL_REBOOT_ATTEMPTS:
         logging.info("Max reboots reached")
-        startup_time += 1
         set_startup_time(False, startup_time)
+        startup_time += 1
         if startup_time == len(STARTUP_TIMES):
             logging.info("No new startup time for today, setting time for tomorrow")
             startup_time = 1

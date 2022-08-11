@@ -12,11 +12,12 @@ import time
 import logging
 import subprocess
 import json
+import trap
 
 FOCUS_VAL = 202 # Motorized 8mp line
 
-FAIL_REBOOT_ATTEMPTS = 2
-REBOOT_TIME = 300  # 5 minutes
+FAIL_REBOOT_ATTEMPTS = 1
+REBOOT_TIME = 120  # 2 minutes
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
 SLEEP_BEFORE_SHUTDOWN = 5  # 5 seconds
 STAY_ON_SLEEP = 600  # 10 minutes
@@ -151,14 +152,16 @@ def take_pic(trap_status):
         camera.close()
         logging.info("Image taken and saved")
 
-
 def wait_for_connectivity(start_of_run, pre_config):
     time.sleep(CONNECTIVITY_SLEEP_TIME)
     while not connected_to_internet():
         logging.info("Sleeping for: " + str(CONNECTIVITY_SLEEP_TIME))
         time.sleep(CONNECTIVITY_SLEEP_TIME)
-        if time.time() - start_of_run > REBOOT_TIME:
-            return run_reboot(pre_config, start_of_run)
+        now = time.time()
+        if now - start_of_run > REBOOT_TIME:
+            logging.error('Didnt connect to the internet, will reboot at end of run')
+            return False
+            # run_reboot(pre_config, start_of_run)
     logging.info('Connected to internet')
     return True
 
@@ -169,11 +172,11 @@ def set_startup_time(is_test, start_index):
     start = STARTUP_TIMES[start_index]
     command = "5\n?? " + start + "\n11\n"
     stdout, stderr = p.communicate(input=command)
-    for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
-        if line.startswith(">>>"):
-            logging.info(line[4:])
-        elif line.strip().startswith("4.") or line.strip().startswith("5."):
-            logging.info(line[14:])
+    # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
+    #     if line.startswith(">>>"):
+    #         logging.info(line[4:])
+    #     elif line.strip().startswith("4.") or line.strip().startswith("5."):
+    #         logging.info(line[14:])
     logging.info("Next startup time set to: " + str(start))
 
 def set_dummy_load(remove_dummy_load):
@@ -200,8 +203,9 @@ def run_reboot(config, start_of_run):
     startup_time = config["startup_time"]
     image_taken_today = config["image_taken_today"]
     run_time += calc_run_time(start_of_run)
-    if boot_count == FAIL_REBOOT_ATTEMPTS:
+    if boot_count >= FAIL_REBOOT_ATTEMPTS:
         logging.info("Max reboots reached")
+        set_startup_time(False, startup_time)
         startup_time += 1
         if startup_time == len(STARTUP_TIMES):
             logging.info("No new startup time for today, setting time for tomorrow")
@@ -210,7 +214,9 @@ def run_reboot(config, start_of_run):
             set_startup_time(False, 0)
         boot_count = 0
         write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today)
+        logging.info("Shutting Down - next startup time is " + str(STARTUP_TIMES[startup_time]))
         system("shutdown now -h")
+        exit()
 
     else:
         boot_count += 1
@@ -218,6 +224,8 @@ def run_reboot(config, start_of_run):
         time.sleep(5)
         logging.info("Rebooting")
         system('reboot')
+        exit()
+
 
 def calc_run_time(start_of_run):
     return round(time.time() - start_of_run, 3) / 60
@@ -237,7 +245,6 @@ def send_image(token, trap_id, test_mode, startup_index, boot_count, config):
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
     run_time = get_trap_boot_data("run_time", config)
-    logging.info("run time is - : " + str(run_time))
     number_of_boots = startup_index * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
             'runTime': run_time , 'numberOfBoots': number_of_boots}
@@ -255,8 +262,8 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - start_of_run > REBOOT_TIME:
                 logging.error(str(e) + " reached max retries. shutting off")
-                run_reboot(config, start_of_run)
-                return
+                # run_reboot(config, start_of_run)
+                return False
             logging.error(str(e) + " failed attempt at sending request")
             logging.exception(str(e))
         else:
@@ -264,8 +271,10 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot
                 data = result.json()
                 logging.info('Image sent! response data: ' + str(data))
                 send_attempt = False
+                return True
             else:
                 logging.error("Image was not sent - " + result.text)
+                return False
 
 def update_trap_db_status(trap_status):
     if trap_status.get("test_mode") is not None:
@@ -296,9 +305,22 @@ def get_trap_boot_data(data, config):
         logging.info('Trap boot data for: ' + str(data) + '. is: ' + str(boot_data))
         return boot_data
 
+def safe_send_log_data(token, serial, delete_log = False):
+    try:
+        result = send_log(token, serial, delete_log)
+    except Exceptione:
+        logging.error('Failed to send log - exception thrown')
+        logging.exception(str(e))
+    else:
+        if result == 200:
+            logging.info("Sent log sent successfully!")
+        else:
+            logging.error("Failed to send log - error returned" + str(result))
+
+
 def send_log_data(token, serial, weekday, send_log_request, delete_log = False):
     if send_log_request or weekday == 6:
-        send_log(token, serial, delete_log)
+        safe_send_log_data(token, serial, delete_log)
 
 def update_trap_version(trap_status):
     version_update = trap_status.get("version_update")
@@ -316,7 +338,19 @@ def update_trap_version(trap_status):
             update_trap_data('release_version.db', 'main')
             logging.info("Trap updated to default version 'main'")
 
-def update_trap_run_time(start_of_run, config,token=None, serial=None, should_send_runtime=False):
+def safe_send_runtime(token, serial, overall_run_time):
+    try:
+      result = send_run_time(token, serial, round(overall_run_time, 3))
+    except Exceptione:
+        logging.error('failed to get trap status')
+        logging.exception(str(e))
+    else:
+        if result == 200:
+            logging.info("sent runtime sent successfully")
+        else:
+            logging.error("failed to send runtime - error returned" + str(result))
+
+def update_trap_run_time(start_of_run, config, token=None, serial=None, should_send_runtime=False):
     total_current_run_time = calc_run_time(start_of_run)
     previous_run_time = config["run_time"]
     over_all_run_time = round(total_current_run_time, 3) + previous_run_time
@@ -324,28 +358,64 @@ def update_trap_run_time(start_of_run, config,token=None, serial=None, should_se
     update_config_file(config)
     logging.info("Sending run time of total - " + str(round(over_all_run_time, 3)) + " minutes")
     if should_send_runtime:
-        send_run_time(token, serial, round(over_all_run_time, 3))
+        safe_send_runtime(token, serial, round(over_all_run_time, 3))
+
+def attempt_get_trap_status(token, serial):
+    trap_status = {}
+    logging.info('Attempting to get trap status')
+    try:
+        trap_status, status_code = get_trap_status(token, serial)
+    except Exception as e:
+        logging.error('failed to get trap status')
+        logging.exception(str(e))
+    else:
+        if status_code == 200:
+            logging.info("Trap status Response - " + str(trap_status))
+        else:
+            logging.error("Trap status returned error - " + str(status_code))
+    return trap_status
+
+def set_emergency_shutdown():
+    logging.info('Setting pre-run emergency shutdown to - ??:15')
+    p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    command = "5\n?? ??:15 \n11\n"
+    p.communicate(input=command)
+
+def set_pre_run_data(pre_config):
+    pre_run_test_mode = get_test_mode()
+    start_up_index = get_trap_boot_data("startup_time", pre_config)
+    logging.info('Setting pre-run data for trap with start_up_time ' + str(STARTUP_TIMES[start_up_index]))
+    set_startup_time(pre_run_test_mode, start_up_index)
+    set_emergency_shutdown()
 
 def main():
     start_of_run = time.time()
     configure_logging(logging)
-    internet_connection= False
+    internet_connection = False
     token, serial = None, None
+    detection_sent = False
     config = None
+    trap_status = {}
     logging.info("========================STARTING NEW WAKEUP LOG========================")
     try:
         token, serial = get_trap_base_data()
-        logging.info('Trap-id:' + str(serial))
-        logging.info('Trap version is: ' + str(get_trap_version()))
+        # current_trap = trap(token, serial, start_of_run, FOCUS_VAL, get_trap_version())
+        logging.info('TRAP-ID:' + str(serial))
+        # logging.info('TRAP-ID: ' + current_trap.get_trap_id())
+        logging.info('TRAP-VERSION: ' + str(get_trap_version()))
+        # logging.info('TRAP-VERSION: ' + current_trap.get_trap_version())
         if not validate_trap_base_data(token, serial):
             return
         pre_config = get_trap_boot_data_config()
+        set_pre_run_data(pre_config)
         internet_connection = wait_for_connectivity(start_of_run, pre_config)
-        trap_status = get_trap_status(token, serial)
-        logging.info("Trap status Response - " + str(trap_status))
-        if trap_status.get("update_dummy_load"):
-            set_dummy_load(trap_status.get("remove_dummy_load"))
-        update_trap_db_status(trap_status)
+        # current_trap.set_connectivity(internet_connection)
+        if internet_connection:
+            trap_status = attempt_get_trap_status(token, serial)
+        # init_trap_from_returned_status(current_trap, trap_status)
+            if trap_status.get("update_dummy_load"):
+                set_dummy_load(trap_status.get("remove_dummy_load"))
+            update_trap_db_status(trap_status)
         config = get_trap_boot_data_config()
         if trap_status.get("change_battery"):
             config["run_time"] = 0
@@ -353,17 +423,25 @@ def main():
         test_mode = get_test_mode()
         if test_mode is None:
             return
+        logging.info("Mode is : " + ("production" if not test_mode else "test"))
         if not get_trap_boot_data("image_taken_today", config):
             take_pic(trap_status)
             config['image_taken_today'] = True
             update_config_file(config)
+        if not internet_connection:
+            run_reboot(config, start_of_run)
+
         start_up_index = get_trap_boot_data("startup_time", config)
-        logging.info("Startup index is: " + str(start_up_index))
+        # logging.info("Startup index is: " + str(start_up_index))
         boot_count = get_trap_boot_data("boot_count", config)
         if boot_count == 0:
             set_startup_time(test_mode, start_up_index)
-        logging.info("Mode is : " + ("production" if not test_mode else "test"))
-        send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
+        if internet_connection:
+            detection_sent = send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
+
+        if not detection_sent:
+            run_reboot(config, start_of_run)
+
         config['image_taken_today'] = False
         config['startup_time'] = 1
         set_startup_time(test_mode, 0)
@@ -371,10 +449,8 @@ def main():
         should_stay_on = trap_status.get("stay_on")
         while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
             logging.info("-----------TRAP IS STAYING ON CHECKING DATA AND PERFORMING TASKS-----------")
-            # logging.info("now - " + str(time.time()) + " start of run - " + str(start_of_run) + " stay on for - " + str(
-            #     STAY_ON_SLEEP) + "start an now diff is = " + str(time.time() - start_of_run))
             time.sleep(CONNECTIVITY_SLEEP_TIME)
-            changed_trap_status = get_trap_status(token, serial)
+            changed_trap_status = attempt_get_trap_status(token, serial)
             logging.info("New changed status: " + str(changed_trap_status))
             update_trap_db_status(changed_trap_status)
             is_test_mode = changed_trap_status.get('test_mode')
@@ -385,9 +461,10 @@ def main():
             if changed_trap_status.get("turn_off"):
                 logging.info("Turn off request - shutting down trap.")
                 should_stay_on = False
-        update_trap_version(trap_status)
-        update_trap_run_time(start_of_run, config, token, serial, True)
-        send_log_data(token, serial, datetime.today().weekday(), trap_status.get("send_log"), False)
+        if internet_connection:
+            update_trap_version(trap_status)
+            update_trap_run_time(start_of_run, config, token, serial, True)
+            send_log_data(token, serial, datetime.today().weekday(), trap_status.get("send_log"), False)
     except Exception as e:
         try:
             if config:

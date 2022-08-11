@@ -21,6 +21,7 @@ def send_log(token, trap_id, delete=False):
                         headers={"Authorization": "Bearer " + token}, files=my_files, timeout=10)
     if res.status_code == 200 and delete:
         os.remove('trap.log')
+    return res.status_code
 
 def update(version='main'):
     branch = None
@@ -34,8 +35,7 @@ def update(version='main'):
 def get_trap_status(token, trap_id):
     res = requests.get(STATUS_URL+"/"+trap_id,
                         headers={"Authorization": "Bearer " + token}, timeout=10)
-    if res.status_code == 200:
-        return res.json()
+    return res.json(), res.status_code
 
 def send_run_time(token, trap_id, run_time):
     res = requests.post(RUN_TIME_URL, data={'trapId': trap_id, 'runTime': run_time},

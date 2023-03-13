@@ -6,7 +6,7 @@ show_witty_stats(){
         return 
     fi
     printf "${red}*************************************************************************\n${nc}"
-    echo -e "11\n"  | sudo sh /home/pi/wittypi/wittyPi.sh | while read line; do 
+    echo -e "13\n"  | sudo sh /home/pi/wittypi/wittyPi.sh | while read line; do
         if [[ $line == '>>>'* ]]; then
             subline="${line:3}"
             echo $subline

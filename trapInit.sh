@@ -115,8 +115,16 @@ if [[ "$option" == 1 ]] ;then
 
     #Download and install Witty Pi software
     echo 'Downloading Witty pi software'
-    wget http://www.uugear.com/repo/WittyPi3/install.sh
-    echo 'Install Witty pi software'
+    read -p "Install new witty pi 4? (y/n) " yn
+    if [[ "$yn" == 'y' ]]; then
+      wget http://www.uugear.com/repo/WittyPi4/install.sh
+      echo "true" > /home/pi/new_witty.db
+      echo 'Install new Witty pi 4 Software'
+    EOF
+    elif [[ "$yn" == 'n' ]]; then
+      wget http://www.uugear.com/repo/WittyPi3/install.sh
+      echo 'Install old Witty pi 3 software'
+    EOF
     sudo sh install.sh
     echo 'adding GPIO-4 fix to wittyPi/daemon.sh'
     sudo sed -i '119d' wittypi/daemon.sh # dansker

@@ -168,32 +168,31 @@ EOF
 elif [[ "$option" == 3 ]]; then
     echo 'Setting test mode '
     echo "true" > /home/pi/testMode.db
-    read -p "Is this the new witty pi 4? (y/n) " yn
-    if [[ "$yn" == 'y' ]]; then
-      sudo sh wittypi/wittyPi.sh &> /dev/null  <<EOF
-      6
-      1
-      13
-    EOF
-    if [[ "$yn" == 'n' ]]; then
-      startup=??
-      while true; do
-          read -p "daily startup? (y/n) " yn
-          if [[ "$yn" == 'y' ]]; then
-            startup=08
-            break;
-          fi
-          if [[ "$yn" == 'n' ]]; then
-            break;
-          fi
-      done
-    EOF
+    echo "Setting new witty pi 4 to test mode"
+#    read -p "Is this the new witty pi 4? (y/n) " yn
+#    if [[ "$yn" == 'y' ]]; then
     sudo sh wittypi/wittyPi.sh &> /dev/null  <<EOF
-    5
-    ?? $startup:00:00
+    6
     1
-    11
+    13
 EOF
+#    if [[ "$yn" == 'n' ]]; then
+#      startup=??
+#      while true; do
+#          read -p "daily startup? (y/n) " yn
+#          if [[ "$yn" == 'y' ]]; then
+#            startup=08
+#            break;
+#          fi
+#          if [[ "$yn" == 'n' ]]; then
+#            break;
+#          fi
+#      done
+#      sudo sh wittypi/wittyPi.sh &> /dev/null  <<EOF
+#      5
+#      ?? $startup:00:00
+#      1
+#      11
 read -p "Should set Dummy load? (y/n) " yn
 if [[ "$yn" == 'y' ]]; then set_dummy_load; break; fi
 

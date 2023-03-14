@@ -25,6 +25,9 @@ URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_im
 BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
 
+EVERY_2_HOUR_SCRIPT = 'BEGIN 2016-08-05 00:00:00 \nEND   2025-07-31 23:59:59 \nON    M1 WAIT\nOFF   H1 M59'
+EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 11:00:00 \nEND   2025-07-31 23:59:59 \nON    M1 WAIT \nOFF   H23 M59'
+
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
     try:
@@ -85,6 +88,20 @@ def get_token():
         if not token_trap:
             return None
     return token_trap
+
+
+def get_witty_type():
+    if path.exists('new_witty.db'):
+        file = open('new_witty.db', "r")
+        is_new_witty = file.read().strip()
+        file.close()
+        if not is_new_witty:
+            return False
+        if is_new_witty.lower() == "true":
+            return True
+        elif is_new_witty.lower() == "false":
+            return False
+    return False
 
 
 def get_test_mode():
@@ -175,19 +192,38 @@ def wait_for_connectivity(start_of_run, pre_config):
     return True
 
 
+def set_and_run_new_witty_startup(startup_script):
+    with open('schedule.wpi', 'a') as the_file:
+        the_file.write(startup_script)
+        p = subprocess.Popen(['sh', 'wittypi/runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
+            if line.startswith(">>>"):
+                logging.info(line[4:])
+            elif line.strip().startswith("4.") or line.strip().startswith("5."):
+                logging.info(line[14:])
+
+
 def set_startup_time(is_test, start_index):
     if is_test:
         return
-    p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    start = STARTUP_TIMES[start_index]
-    command = "5\n?? " + start + "\n11\n"
-    stdout, stderr = p.communicate(input=command)
-    # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
-    #     if line.startswith(">>>"):
-    #         logging.info(line[4:])
-    #     elif line.strip().startswith("4.") or line.strip().startswith("5."):
-    #         logging.info(line[14:])
-    logging.info("Next startup time set to: " + str(start))
+    is_new_witty = get_witty_type()
+    if is_new_witty:
+        if start_index == 0:
+            set_and_run_new_witty_startup(EVERY_DAY_SCRIPT)
+        else:
+            set_and_run_new_witty_startup(EVERY_2_HOUR_SCRIPT)
+    else:
+        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        start = STARTUP_TIMES[start_index]
+        command = "5\n?? " + start + "\n11\n"
+        stdout, stderr = p.communicate(input=command)
+        # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
+        #     if line.startswith(">>>"):
+        #         logging.info(line[4:])
+        #     elif line.strip().startswith("4.") or line.strip().startswith("5."):
+        #         logging.info(line[14:])
+        logging.info("Next startup time set to: " + str(start))
 
 
 def set_dummy_load(remove_dummy_load):
@@ -434,7 +470,7 @@ def main():
         if not validate_trap_base_data(token, serial):
             return
         pre_config = get_trap_boot_data_config()
-        set_pre_run_data(pre_config)
+        # set_pre_run_data(pre_config)
         internet_connection = wait_for_connectivity(start_of_run, pre_config)
         # current_trap.set_connectivity(internet_connection)
         if internet_connection:

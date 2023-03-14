@@ -26,7 +26,7 @@ URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_im
 BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
 
-EVERY_2_HOUR_SCRIPT = 'BEGIN 2016-08-05 00:00:00 \nEND   2025-07-31 23:59:59 \nON    M1 WAIT\nOFF   H1 M59'
+EVERY_2_HOUR_SCRIPT = 'BEGIN  2016-08-05 00:00:00 \nEND    2025-07-31 23:59:59 \nON    M1 WAIT\nOFF   H1 M59'
 EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 11:00:00 \nEND   2025-07-31 23:59:59 \nON    M1 WAIT \nOFF   H23 M59'
 
 
@@ -194,19 +194,19 @@ def wait_for_connectivity(start_of_run, pre_config):
 
 
 def set_and_run_new_witty_startup(startup_script):
-    logging.info('Attmpting to set turn on with'+ str(startup_script))
+    logging.info('Attmpting to set turn on with \n' + str(startup_script))
     with open('wittypi/schedule.wpi', 'w') as file:
         file.write(startup_script)
-        os.chdir("wittypi")
-        p = subprocess.Popen(['sh', 'runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-        os.chdir("/home/pi")
-        logging.info(stdout)
-        # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
-        #     if line.startswith(">>>"):
-        #         logging.info(line[4:])
-        #     elif line.strip().startswith("4.") or line.strip().startswith("5."):
-        #         logging.info(line[14:])
+    os.chdir("wittypi")
+    p = subprocess.Popen(['bash', 'runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+    os.chdir("/home/pi")
+    logging.info(stdout)
+    # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
+    #     if line.startswith(">>>"):
+    #         logging.info(line[4:])
+    #     elif line.strip().startswith("4.") or line.strip().startswith("5."):
+    #         logging.info(line[14:])
 
 
 def set_startup_time(is_test, start_index):

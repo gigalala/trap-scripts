@@ -547,7 +547,7 @@ def main():
         except Exception as e:
             logging.exception(str(e))
     time.sleep(SLEEP_BEFORE_SHUTDOWN)
-#    system("shutdown now -h")
+    system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

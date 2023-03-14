@@ -193,15 +193,16 @@ def wait_for_connectivity(start_of_run, pre_config):
 
 
 def set_and_run_new_witty_startup(startup_script):
-    with open('schedule.wpi', 'a') as the_file:
-        the_file.write(startup_script)
+    with open('wittypi/schedule.wpi', 'a') as file:
+        file.write(startup_script)
         p = subprocess.Popen(['sh', 'wittypi/runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = p.communicate()
-        for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
-            if line.startswith(">>>"):
-                logging.info(line[4:])
-            elif line.strip().startswith("4.") or line.strip().startswith("5."):
-                logging.info(line[14:])
+        logging.info(stdout)
+        # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
+        #     if line.startswith(">>>"):
+        #         logging.info(line[4:])
+        #     elif line.strip().startswith("4.") or line.strip().startswith("5."):
+        #         logging.info(line[14:])
 
 
 def set_startup_time(is_test, start_index):
@@ -471,6 +472,7 @@ def main():
             return
         pre_config = get_trap_boot_data_config()
         # set_pre_run_data(pre_config)
+        set_startup_time(False, 0)
         internet_connection = wait_for_connectivity(start_of_run, pre_config)
         # current_trap.set_connectivity(internet_connection)
         if internet_connection:

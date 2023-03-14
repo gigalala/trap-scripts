@@ -31,12 +31,13 @@ EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 11:00:00 \nEND   2025-07-31 23:59:59 \nON  
 
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
-    try:
-        _ = requests.head(url, timeout=timeout)
-        return True
-    except requests.ConnectionError:
-        logging.info("No internet connection available.")
     return False
+    # try:
+    #     _ = requests.head(url, timeout=timeout)
+    #     return True
+    # except requests.ConnectionError:
+    #     logging.info("No internet connection available.")
+    # return False
 
 
 def get_serial():
@@ -476,7 +477,7 @@ def main():
             return
         pre_config = get_trap_boot_data_config()
         # set_pre_run_data(pre_config)
-        set_startup_time(False, 0)
+        # set_startup_time(False, 0)
         internet_connection = wait_for_connectivity(start_of_run, pre_config)
         # current_trap.set_connectivity(internet_connection)
         if internet_connection:

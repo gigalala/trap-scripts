@@ -449,12 +449,13 @@ def set_emergency_shutdown():
 
 
 def set_pre_run_data(pre_config):
-    is_new_witty = get_witty_type()
-    if not is_new_witty:
-        pre_run_test_mode = get_test_mode()
-        start_up_index = get_trap_boot_data("startup_time", pre_config)
-        logging.info('Setting pre-run data for trap with start_up_time ' + str(STARTUP_TIMES[start_up_index]))
-        set_startup_time(pre_run_test_mode, start_up_index)
+    # is_new_witty = get_witty_type()
+    # if not is_new_witty:
+    pre_run_test_mode = get_test_mode()
+    start_up_index = get_trap_boot_data("startup_time", pre_config)
+    logging.info('Setting pre-run data for trap with start_up_time ' + str(STARTUP_TIMES[start_up_index]))
+    set_startup_time(pre_run_test_mode, start_up_index)
+    if not get_witty_type():
         set_emergency_shutdown()
 
 

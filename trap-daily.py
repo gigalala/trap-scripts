@@ -465,7 +465,11 @@ def update_time_by_network():
         p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         command = "3\n " + "\n13\n"
         stdout, stderr = p.communicate(input=command)
-        logging.info(stdout)
+        for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
+            if line.startswith(">>>"):
+                logging.info(line[4:])
+            elif line.strip().startswith("4.") or line.strip().startswith("5."):
+                logging.info(line[14:])
 
 
 def main():
@@ -556,7 +560,7 @@ def main():
         except Exception as e:
             logging.exception(str(e))
     time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    system("shutdown now -h")
+#    system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

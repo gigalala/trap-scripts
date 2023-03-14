@@ -193,7 +193,8 @@ def wait_for_connectivity(start_of_run, pre_config):
 
 
 def set_and_run_new_witty_startup(startup_script):
-    with open('wittypi/schedule.wpi', 'a') as file:
+    logging.info('attmpting to set turn on with'+ str(startup_script))
+    with open('wittypi/schedule.wpi', 'r') as file:
         file.write(startup_script)
         p = subprocess.Popen(['sh', 'wittypi/runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = p.communicate()

@@ -4,6 +4,7 @@ import base64
 from datetime import datetime
 from os import path
 from os import system
+import os
 from response_actions import change_battery, stay_on, update, send_log, get_trap_status, send_run_time
 from Autofocus import get_focus
 from picamera import PiCamera
@@ -193,11 +194,13 @@ def wait_for_connectivity(start_of_run, pre_config):
 
 
 def set_and_run_new_witty_startup(startup_script):
-    logging.info('attmpting to set turn on with'+ str(startup_script))
-    with open('wittypi/schedule.wpi', 'r') as file:
+    logging.info('Attmpting to set turn on with'+ str(startup_script))
+    with open('wittypi/schedule.wpi', 'w') as file:
         file.write(startup_script)
-        p = subprocess.Popen(['sh', 'wittypi/runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        os.chdir("wittypi")
+        p = subprocess.Popen(['sh', 'runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = p.communicate()
+        os.chdir("/home/pi")
         logging.info(stdout)
         # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
         #     if line.startswith(">>>"):

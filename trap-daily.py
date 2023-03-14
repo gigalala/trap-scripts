@@ -100,8 +100,6 @@ def get_witty_type():
             return False
         if is_new_witty.lower() == "true":
             return True
-        elif is_new_witty.lower() == "false":
-            return False
     return False
 
 
@@ -194,7 +192,7 @@ def wait_for_connectivity(start_of_run, pre_config):
 
 
 def set_and_run_new_witty_startup(startup_script):
-    logging.info('Attmpting to set turn on with \n' + str(startup_script))
+    logging.info('Attmpting to set witty script \n')
     with open('wittypi/schedule.wpi', 'w') as file:
         file.write(startup_script)
     os.chdir("wittypi")
@@ -202,16 +200,11 @@ def set_and_run_new_witty_startup(startup_script):
     stdout, stderr = p.communicate()
     os.chdir("/home/pi")
     logging.info(stdout)
-    # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
-    #     if line.startswith(">>>"):
-    #         logging.info(line[4:])
-    #     elif line.strip().startswith("4.") or line.strip().startswith("5."):
-    #         logging.info(line[14:])
 
 
 def set_startup_time(is_test, start_index):
-    # if is_test:
-    #     return
+    if is_test:
+        return
     is_new_witty = get_witty_type()
     if is_new_witty:
         if start_index == 0:

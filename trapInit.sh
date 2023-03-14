@@ -126,9 +126,9 @@ if [[ "$option" == 1 ]] ;then
 #      echo 'Install old Witty pi 3 software'
 #    break; fi
     sudo sh install.sh
-    echo 'adding GPIO-4 fix to wittyPi/daemon.sh'
-    sudo sed -i '119d' wittypi/daemon.sh # dansker
-    sed -i '119iwhile [ $counter -lt 20]; do' wittypi/daemon.sh #dansker
+#    echo 'adding GPIO-4 fix to wittyPi/daemon.sh'
+#    sudo sed -i '119d' wittypi/daemon.sh # dansker
+#    sed -i '119iwhile [ $counter -lt 20]; do' wittypi/daemon.sh #dansker
 
     printf "${red}*************************************************************************\n"
     printf "${red}***********************!!!IMPORTANT DEVICE DATA!!!***********************\n"

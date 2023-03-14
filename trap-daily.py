@@ -31,13 +31,12 @@ EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 11:00:00 \nEND   2025-07-31 23:59:59 \nON  
 
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
+    try:
+        _ = requests.head(url, timeout=timeout)
+        return True
+    except requests.ConnectionError:
+        logging.info("No internet connection available.")
     return False
-    # try:
-    #     _ = requests.head(url, timeout=timeout)
-    #     return True
-    # except requests.ConnectionError:
-    #     logging.info("No internet connection available.")
-    # return False
 
 
 def get_serial():
@@ -450,11 +449,23 @@ def set_emergency_shutdown():
 
 
 def set_pre_run_data(pre_config):
-    pre_run_test_mode = get_test_mode()
-    start_up_index = get_trap_boot_data("startup_time", pre_config)
-    logging.info('Setting pre-run data for trap with start_up_time ' + str(STARTUP_TIMES[start_up_index]))
-    set_startup_time(pre_run_test_mode, start_up_index)
-    set_emergency_shutdown()
+    is_new_witty = get_witty_type()
+    if not is_new_witty:
+        pre_run_test_mode = get_test_mode()
+        start_up_index = get_trap_boot_data("startup_time", pre_config)
+        logging.info('Setting pre-run data for trap with start_up_time ' + str(STARTUP_TIMES[start_up_index]))
+        set_startup_time(pre_run_test_mode, start_up_index)
+        set_emergency_shutdown()
+
+
+def update_time_by_network():
+    is_new_witty = get_witty_type()
+    logging.info("New witty pi, updating RTC clock by network")
+    if is_new_witty:
+        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        command = "3\n " + "\n13\n"
+        stdout, stderr = p.communicate(input=command)
+        logging.info(stdout)
 
 
 def main():
@@ -476,12 +487,12 @@ def main():
         if not validate_trap_base_data(token, serial):
             return
         pre_config = get_trap_boot_data_config()
-        # set_pre_run_data(pre_config)
-        # set_startup_time(False, 0)
+        set_pre_run_data(pre_config)
         internet_connection = wait_for_connectivity(start_of_run, pre_config)
         # current_trap.set_connectivity(internet_connection)
         if internet_connection:
             trap_status = attempt_get_trap_status(token, serial)
+            update_time_by_network()
         # init_trap_from_returned_status(current_trap, trap_status)
             if trap_status.get("update_dummy_load"):
                 set_dummy_load(trap_status.get("remove_dummy_load"))

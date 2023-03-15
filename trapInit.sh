@@ -115,7 +115,7 @@ if [[ "$option" == 1 ]] ;then
 
     #Download and install Witty Pi software
     echo 'Downloading Witty pi software'
-    read -p "Install new witty pi 4? (y/n) " yn
+#    read -p "Install new witty pi 4? (y/n) " yn
 #    if [[ "$yn" == 'y' ]]; then
     wget http://www.uugear.com/repo/WittyPi4/install.sh
     echo "true" > /home/pi/new_witty.db

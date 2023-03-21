@@ -159,15 +159,14 @@ def take_pic(trap_status):
         "5 mega pixel." if is_five_mega else "8 mega pixel.") + " with focus value:" + str(focus_value))
     camera_res = (2592, 1944)
     if not is_five_mega:
-        camera_res = (3280, 2464)  # Motorized 8mp line
-        arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 8mp line
-        arducam_vcm.vcm_init()  # Motorized 8mp line
+        camera_res = (3280, 2464)  # Motorized 5/8mp line
+    arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 5/8mp line
+    arducam_vcm.vcm_init()  # Motorized 5/8mp line
     camera = PiCamera()
     try:
         camera.resolution = (camera_res[0], camera_res[1])
-        if not is_five_mega:
-            arducam_vcm.vcm_write(focus_value)  # Motorized 8mp line
-            time.sleep(2)  # Motorized 8mp line
+        arducam_vcm.vcm_write(focus_value)  # Motorized 5/8mp line
+        time.sleep(2)  # Motorized 5/8mp line
         camera.capture("latest.jpg")
     except Exception:
         camera.close()

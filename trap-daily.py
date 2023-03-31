@@ -202,8 +202,8 @@ def set_and_run_new_witty_startup(startup_script):
 
 
 def set_startup_time(is_test, start_index):
-    if is_test:
-        return
+    # if is_test:
+    #     return
     is_new_witty = get_witty_type()
     if is_new_witty:
         if start_index == 0:

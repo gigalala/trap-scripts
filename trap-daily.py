@@ -152,7 +152,7 @@ def write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today):
     file.close()
 
 
-def take_pic(trap_status):
+def take_pic(trap_status, should_use_flash):
     is_five_mega = get_camera_type()
     focus_value = get_focus_value(trap_status.get("auto_focus"))
     logging.info("Starting camera process with - " + (
@@ -167,7 +167,15 @@ def take_pic(trap_status):
         camera.resolution = (camera_res[0], camera_res[1])
         arducam_vcm.vcm_write(focus_value)  # Motorized 5/8mp line
         time.sleep(2)  # Motorized 5/8mp line
-        camera.capture("latest.jpg")
+        if should_use_flash:
+            GPIO.setmode(GPIO.BOARD)
+            GPIO.setup(3, GPIO.OUT)
+            GPIO.output(3, True)
+            camera.capture("latest.jpg")
+            GPIO.output(3, False)
+            GPIO.cleanup()
+        else:
+            camera.capture("latest.jpg")
     except Exception:
         camera.close()
         logging.exception('Failed to take a picture')
@@ -469,6 +477,7 @@ def main():
     internet_connection = False
     token, serial = None, None
     detection_sent = False
+    should_use_flash = True
     config = None
     trap_status = {}
     logging.info("========================STARTING NEW WAKEUP LOG========================")
@@ -491,12 +500,15 @@ def main():
         if trap_status.get("change_battery"):
             config["run_time"] = 0
             update_config_file(config)
+        server_should_use_flash = trap_status.get("should_use_flash")
+        if server_should_use_flash:
+            should_use_flash = server_should_use_flash
         test_mode = get_test_mode()
         if test_mode is None:
             return
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         if not get_trap_boot_data("image_taken_today", config):
-            take_pic(trap_status)
+            take_pic(trap_status, should_use_flash)
             config['image_taken_today'] = True
             update_config_file(config)
         if not internet_connection:

@@ -13,6 +13,7 @@ import time
 import logging
 import subprocess
 import json
+import RPi.GPIO as GPIO
 # import trap
 
 FOCUS_VAL = 202 # Motorized 8mp line

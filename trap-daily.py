@@ -153,7 +153,7 @@ def write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today):
     file.close()
 
 
-def take_pic(trap_status, should_use_flash):
+def take_pic(trap_status):
     is_five_mega = get_camera_type()
     focus_value = get_focus_value(trap_status.get("auto_focus"))
     logging.info("Starting camera process with - " + (
@@ -168,15 +168,7 @@ def take_pic(trap_status, should_use_flash):
         camera.resolution = (camera_res[0], camera_res[1])
         arducam_vcm.vcm_write(focus_value)  # Motorized 5/8mp line
         time.sleep(2)  # Motorized 5/8mp line
-        if should_use_flash:
-            GPIO.setmode(GPIO.BOARD)
-            GPIO.setup(3, GPIO.OUT)
-            GPIO.output(3, True)
-            camera.capture("latest.jpg")
-            GPIO.output(3, False)
-            GPIO.cleanup()
-        else:
-            camera.capture("latest.jpg")
+        camera.capture("latest.jpg")
     except Exception:
         camera.close()
         logging.exception('Failed to take a picture')
@@ -509,7 +501,17 @@ def main():
             return
         logging.info("Mode is : " + ("production" if not test_mode else "test"))
         if not get_trap_boot_data("image_taken_today", config):
-            take_pic(trap_status, should_use_flash)
+            if should_use_flash:
+                try:
+                    GPIO.setmode(GPIO.BOARD)
+                    GPIO.setup(3, GPIO.OUT)
+                    GPIO.output(3, True)
+                    take_pic(trap_status)
+                    GPIO.output(3, False)
+                finally:
+                    GPIO.cleanup()
+            else:
+                take_pic(trap_status, should_use_flash)
             config['image_taken_today'] = True
             update_config_file(config)
         if not internet_connection:

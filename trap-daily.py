@@ -503,15 +503,17 @@ def main():
         if not get_trap_boot_data("image_taken_today", config):
             if should_use_flash:
                 try:
+                    pin_number = 12
+                    logging.info("Activating GIPO pin number: "+ str(pin_number))
                     GPIO.setmode(GPIO.BOARD)
-                    GPIO.setup(3, GPIO.OUT)
-                    GPIO.output(3, True)
+                    GPIO.setup(pin_number, GPIO.OUT)
+                    GPIO.output(pin_number, True)
                     take_pic(trap_status)
-                    GPIO.output(3, False)
+                    GPIO.output(pin_number, False)
                 finally:
                     GPIO.cleanup()
             else:
-                take_pic(trap_status, should_use_flash)
+                take_pic(trap_status)
             config['image_taken_today'] = True
             update_config_file(config)
         if not internet_connection:

@@ -29,7 +29,27 @@ STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21
 
 EVERY_2_HOUR_SCRIPT = 'BEGIN  2016-08-05 00:00:00 \nEND    2025-07-31 23:59:59 \nON    M1 WAIT\nOFF   H1 M59'
 EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 12:00:00 \nEND   2025-07-31 23:59:59 \nON    ON    H23 M59 WAIT \nOFF   M1'
-
+NIGHT_TIME_SCRIPT = ('BEGIN 2015-08-02 20:00:00\n\
+END   2025-07-31 23:59:59\n\
+ON    \n\
+ON    M55\n\
+OFF   M5\n\
+ON    M55\n\
+OFF   M5\n\
+ON    M55\n\
+OFF   M5\n\
+ON    M55\n\
+OFF   M5\n\
+ON    M55\n\
+OFF   M5\n\
+ON    M55\n\
+OFF   M5\n\
+ON    M55\n\
+OFF   M5\n\
+ON    M55\n\
+OFF   M5\n\
+ON    M55\n\
+OFF   H15 M5')
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
     try:
@@ -208,9 +228,9 @@ def set_startup_time(is_test, start_index):
     is_new_witty = get_witty_type()
     if is_new_witty:
         if start_index == 0:
-            set_and_run_new_witty_startup(EVERY_DAY_SCRIPT)
+            set_and_run_new_witty_startup(NIGHT_TIME_SCRIPT)
         else:
-            set_and_run_new_witty_startup(EVERY_2_HOUR_SCRIPT)
+            set_and_run_new_witty_startup(NIGHT_TIME_SCRIPT)
     else:
         p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         start = STARTUP_TIMES[start_index]

@@ -13,6 +13,9 @@ import time
 import logging
 import subprocess
 import json
+from sensirion_i2c_sht.sht4x import Sht4xI2cDevice
+
+from sensirion_i2c_driver import LinuxI2cTransceiver, I2cConnection
 # import trap
 
 FOCUS_VAL = 202 # Motorized 8mp line
@@ -463,6 +466,20 @@ def update_time_by_network():
                 logging.info(line[14:])
 
 
+def get_weather():
+    with LinuxI2cTransceiver('/dev/i2c-1') as transceiver:
+        sht4x = Sht4xI2cDevice(I2cConnection(transceiver))
+        temperature, humidity = sht4x.single_shot_measurement()
+        # use default formatting for printing output:
+        logging.info("===Getting sensor weather report===")
+        logging.info("Tempeture:" + Str(temperature) + "Humidity: " + humidity)
+        # print("{}, {}".format(temperature, humidity))
+        # custom printing of attributes:
+        # print("{:0.2f} °C ({} ticks), {:0.2f} %RH ({} ticks)".format(
+        #     temperature.degrees_celsius, temperature.ticks,
+        #     humidity.percent_rh, humidity.ticks))
+
+
 def main():
     start_of_run = time.time()
     configure_logging(logging)
@@ -517,6 +534,7 @@ def main():
         config['startup_time'] = 1
         set_startup_time(test_mode, 0)
         update_config_file(config)
+        get_weather()
         should_stay_on = trap_status.get("stay_on")
         while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
             logging.info("-----------TRAP IS STAYING ON CHECKING DATA AND PERFORMING TASKS-----------")

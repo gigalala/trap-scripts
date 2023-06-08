@@ -13,6 +13,7 @@ import time
 import logging
 import subprocess
 import json
+
 from sensirion_i2c_sht.sht4x import Sht4xI2cDevice
 
 from sensirion_i2c_driver import LinuxI2cTransceiver, I2cConnection
@@ -470,14 +471,8 @@ def get_weather():
     with LinuxI2cTransceiver('/dev/i2c-1') as transceiver:
         sht4x = Sht4xI2cDevice(I2cConnection(transceiver))
         temperature, humidity = sht4x.single_shot_measurement()
-        # use default formatting for printing output:
-        logging.info("===Getting sensor weather report===")
-        logging.info("Tempeture:" + Str(temperature) + "Humidity: " + humidity)
-        # print("{}, {}".format(temperature, humidity))
-        # custom printing of attributes:
-        # print("{:0.2f} °C ({} ticks), {:0.2f} %RH ({} ticks)".format(
-        #     temperature.degrees_celsius, temperature.ticks,
-        #     humidity.percent_rh, humidity.ticks))
+        logging.info("=====Getting sensor weather report=====")
+        logging.info("Tempeture: " + str(temperature) + "Humidity: " + str(humidity))
 
 
 def main():

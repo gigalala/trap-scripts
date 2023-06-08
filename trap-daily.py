@@ -473,7 +473,7 @@ def get_weather():
         temperature, humidity = sht4x.single_shot_measurement()
         logging.info("=====Getting sensor weather report=====")
         logging.info("Tempeture: " + str(temperature.degrees_celsius) + "Humidity: " + str(humidity.percent_rh))
-`        return temperature.degrees_celsius, humidity.percent_rh
+        return temperature.degrees_celsius, humidity.percent_rh
 
 
 def main():

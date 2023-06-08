@@ -472,7 +472,7 @@ def get_weather():
         sht4x = Sht4xI2cDevice(I2cConnection(transceiver))
         temperature, humidity = sht4x.single_shot_measurement()
         logging.info("=====Getting sensor weather report=====")
-        logging.info("Tempeture: " + str(temperature.degrees_celsius) + "Humidity: " + str(humidity.percent_rh))
+        logging.info("Temperature: " + str(temperature.degrees_celsius) + "Humidity: " + str(humidity.percent_rh))
         return temperature.degrees_celsius, humidity.percent_rh
 
 

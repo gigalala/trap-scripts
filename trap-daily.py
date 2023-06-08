@@ -291,25 +291,25 @@ def update_trap_data(db, data):
     my_file.close()
 
 
-def send_image(token, trap_id, test_mode, startup_index, boot_count, config):
+def send_image(token, trap_id, test_mode, startup_index, boot_count, config, temperature, humidity):
     with open('latest.jpg', "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read())
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
     run_time = get_trap_boot_data("run_time", config)
     number_of_boots = startup_index * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
-            'runTime': run_time , 'numberOfBoots': number_of_boots}
+            'runTime': run_time , 'numberOfBoots': number_of_boots, 'temperature': temperature, 'humidity': humidity}
     headers = {"Authorization": "Bearer " + token}
     logging.info('Attempting to send Image')
     return requests.post(URL, data=body, headers=headers, timeout=120)
 
 
-def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot_count, config):
+def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot_count, config, temperature, humidity):
     send_attempt = True
     logging.info('Attempting to send request')
     while send_attempt:
         try:
-            result = send_image(token, trap_id, test_mode, start_up_index, boot_count, config)
+            result = send_image(token, trap_id, test_mode, start_up_index, boot_count, config, temperature, humidity)
         except Exception as e:
             time.sleep(CONNECTIVITY_SLEEP_TIME)
             if time.time() - start_of_run > REBOOT_TIME:
@@ -472,7 +472,8 @@ def get_weather():
         sht4x = Sht4xI2cDevice(I2cConnection(transceiver))
         temperature, humidity = sht4x.single_shot_measurement()
         logging.info("=====Getting sensor weather report=====")
-        logging.info("Tempeture: " + str(temperature) + "Humidity: " + str(humidity))
+        logging.info("Tempeture: " + str(temperature.degrees_celsius) + "Humidity: " + str(humidity.percent_rh))
+        return temperature, humidity
 
 
 def main():
@@ -492,6 +493,7 @@ def main():
             return
         pre_config = get_trap_boot_data_config()
         set_pre_run_data(pre_config)
+        temperature, humidity = get_weather()
         internet_connection = wait_for_connectivity(start_of_run, pre_config)
         if internet_connection:
             update_time_by_network()
@@ -520,7 +522,7 @@ def main():
         if boot_count == 0:
             set_startup_time(test_mode, start_up_index)
         if internet_connection:
-            detection_sent = send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config)
+            detection_sent = send_detection(token, serial, test_mode, start_of_run, start_up_index, boot_count, config, temperature, humidity)
 
         if not detection_sent:
             run_reboot(config, start_of_run)
@@ -529,7 +531,6 @@ def main():
         config['startup_time'] = 1
         set_startup_time(test_mode, 0)
         update_config_file(config)
-        get_weather()
         should_stay_on = trap_status.get("stay_on")
         while should_stay_on and (time.time() - start_of_run) < STAY_ON_SLEEP:
             logging.info("-----------TRAP IS STAYING ON CHECKING DATA AND PERFORMING TASKS-----------")

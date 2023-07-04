@@ -89,7 +89,12 @@ if [[ "$option" == 1 ]] ;then
     echo "y\n" | sudo apt install python-opencv
     sudo pip install picamera
     sudo pip install requests
-    
+
+    #install sensor software and drivers
+    echo 'Installing sensor software' 
+    sudo pip install sensirion-i2c-driver
+    sudo ip install sensirion-i2c-sht
+
 
     #Enable camera
     echo 'Enabling camera'

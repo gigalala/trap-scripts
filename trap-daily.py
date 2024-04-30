@@ -218,9 +218,9 @@ def set_startup_time(is_test, start_index):
     is_new_witty = get_witty_type()
     if is_new_witty:
         if start_index == 0:
-            set_and_run_new_witty_startup(ON_EVERY_HOUR)
+            set_and_run_new_witty_startup(NIGHT_TIME_SCRIPT)
         else:
-            set_and_run_new_witty_startup(ON_EVERY_HOUR)
+            set_and_run_new_witty_startup(NIGHT_TIME_SCRIPT)
     else:
         p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         start = STARTUP_TIMES[start_index]

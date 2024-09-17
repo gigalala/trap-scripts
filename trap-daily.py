@@ -20,10 +20,10 @@ FAIL_REBOOT_ATTEMPTS = 1
 REBOOT_TIME = 120  # 2 minutes
 CONNECTIVITY_SLEEP_TIME = 10  # 10 sec
 SLEEP_BEFORE_SHUTDOWN = 5  # 5 seconds
-STAY_ON_SLEEP = 600  # 10 minutes
+STAY_ON_SLEEP = 2400  # 40 minutes
 URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_image'
 BOOT_DATA_FILE_PATH = "trap.data"
-STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
+STARTUP_TIMES = ['09:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
 
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):

@@ -26,7 +26,7 @@ URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_im
 BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
 
-EVERY_2_HOUR_SCRIPT = 'BEGIN  2016-08-05 00:00:00 \nEND    2025-07-31 23:59:59 \nON    M1 WAIT\nOFF   H1 M59'
+EVERY_2_HOUR_SCRIPT = 'BEGIN  2016-08-05 00:00:00 \nEND    2027-07-31 23:59:59 \nON    M1 WAIT\nOFF   M59'
 EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 12:00:00 \nEND   2025-07-31 23:59:59 \nON    ON    H23 M59 WAIT \nOFF   M1'
 
 
@@ -207,7 +207,7 @@ def set_startup_time(is_test, start_index):
     is_new_witty = get_witty_type()
     if is_new_witty:
         if start_index == 0:
-            set_and_run_new_witty_startup(EVERY_DAY_SCRIPT)
+            set_and_run_new_witty_startup(EVERY_2_HOUR_SCRIPT)
         else:
             set_and_run_new_witty_startup(EVERY_2_HOUR_SCRIPT)
     else:

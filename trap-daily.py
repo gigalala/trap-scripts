@@ -8,14 +8,14 @@ import os
 from response_actions import change_battery, stay_on, update, send_log, get_trap_status, send_run_time
 from Autofocus import get_focus
 from picamera import PiCamera
-from ctypes import * # Motorized 8mp line
+from ctypes import *
 import time
 import logging
 import subprocess
 import json
 # import trap
 
-FOCUS_VAL = 202 # Motorized 8mp line
+FOCUS_VAL = 295
 
 FAIL_REBOOT_ATTEMPTS = 1
 REBOOT_TIME = 120  # 2 minutes
@@ -545,8 +545,9 @@ def main():
                 send_log_data(token, serial, datetime.today().weekday(), True, False)
         except Exception as e:
             logging.exception(str(e))
-    time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    system("shutdown now -h")
+    finally:
+        time.sleep(SLEEP_BEFORE_SHUTDOWN)
+        system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

@@ -560,8 +560,6 @@ def main():
     finally:
         time.sleep(SLEEP_BEFORE_SHUTDOWN)
         system("shutdown now -h")
-    time.sleep(SLEEP_BEFORE_SHUTDOWN)
-    system("shutdown now -h")
 
 if __name__ == "__main__":
     main()

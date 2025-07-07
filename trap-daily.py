@@ -323,6 +323,17 @@ def send_detection(token, trap_id, test_mode, start_of_run, start_up_index, boot
             else:
                 logging.error("Image was not sent - " + result.text)
                 return False
+    return None
+
+def set_timezone(timezone):
+    try:
+        subprocess.run(
+            ["sudo", "timedatectl", "set-timezone", timezone],
+            check=True
+        )
+        logging.info(f"Timezone successfully set to {timezone}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to set timezone: {e}")
 
 
 def update_trap_db_status(trap_status):
@@ -441,6 +452,7 @@ def set_emergency_shutdown():
 
 
 def set_pre_run_data(pre_config):
+    set_timezone("America/Los_Angeles")
     pre_run_test_mode = get_test_mode()
     start_up_index = get_trap_boot_data("startup_time", pre_config)
     logging.info('Setting pre-run data for trap with start_up_time ' + str(STARTUP_TIMES[start_up_index]))

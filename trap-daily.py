@@ -331,9 +331,9 @@ def set_timezone(timezone):
             ["sudo", "timedatectl", "set-timezone", timezone],
             check=True
         )
-        logging.info(f"Timezone successfully set to {timezone}")
+        logging.info("Timezone successfully set to " + str(timezone))
     except subprocess.CalledProcessError as e:
-        logging.error(f"Failed to set timezone: {e}")
+        logging.error(e)
 
 
 def update_trap_db_status(trap_status):

@@ -27,7 +27,7 @@ BOOT_DATA_FILE_PATH = "trap.data"
 STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21:00:00', '23:00:00']
 
 EVERY_2_HOUR_SCRIPT = 'BEGIN  2016-08-05 00:00:00 \nEND    2030-07-31 23:59:59 \nON    M1 WAIT\nOFF   H1 M59'
-EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 12:00:00 \nEND   2030-07-31 23:59:59 \nON    M14 WAIT\nOFF   M1'
+EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 12:00:00 \nEND   2030-07-31 23:59:59 \nON    M7 WAIT\nOFF   M1'
 
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):

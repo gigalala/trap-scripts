@@ -259,7 +259,7 @@ def run_reboot(config, start_of_run):
         boot_count = 0
         write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today)
         logging.info("Shutting Down - next startup time is " + str(STARTUP_TIMES[startup_time]))
-        witty_shutdown()
+        shutdown_witty_pi()
         exit()
 
     else:

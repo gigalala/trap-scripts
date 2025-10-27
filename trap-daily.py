@@ -1,4 +1,4 @@
-import shutil
+import smbus
 import requests
 import base64
 from datetime import datetime
@@ -547,54 +547,21 @@ def main():
             logging.exception(str(e))
     finally:
         time.sleep(SLEEP_BEFORE_SHUTDOWN)
-        witty_shutdown()
+        shutdown_witty_pi()
 
-# >>> Added for Witty Pi button-press shutdown (emulate power button via GPIO4 LOW)
-def _press_witty_button(duration=0.2):
-    """
-    Emulates a short press on Witty Pi's power button by pulling BCM GPIO 4 LOW briefly,
-    then restoring it to input with pull-up. Prefers 'raspi-gpio'. Falls back to RPi.GPIO if available.
-    """
+def shutdown_witty_pi():
+    """Set shutdown alarm to current RTC time (triggers immediately)"""
+    bus = smbus.SMBus(1)
+    
     try:
-        if shutil.which("raspi-gpio"):
-            # Use raspi-gpio CLI (ships with Raspberry Pi OS)
-            subprocess.check_call(["raspi-gpio", "set", "4", "op", "dl"])
-            time.sleep(duration)
-            subprocess.check_call(["raspi-gpio", "set", "4", "ip", "pu"])
-            return True
-        else:
-            try:
-                import RPi.GPIO as GPIO
-            except ImportError:
-                logging.error("Neither 'raspi-gpio' nor RPi.GPIO are available – cannot press Witty button.")
-                return False
-
-            # Use RPi.GPIO as a fallback
-            GPIO.setwarnings(False)
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(4, GPIO.OUT, initial=GPIO.LOW)
-            time.sleep(duration)
-            GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-            GPIO.cleanup(4)
-            return True
-    except Exception as e:
-        logging.error("Failed to emulate Witty button press: %s", str(e))
-        logging.exception(e)
-        return False
-
-
-def witty_shutdown(press_duration=0.2):
-    """
-    Ask Witty Pi to shut the system down by emulating its button press.
-    The Witty Pi daemon will receive the event and call a clean OS shutdown,
-    then the board will cut power after its configured delay.
-    """
-    logging.info("Requesting shutdown via Witty Pi button emulation (GPIO4 LOW)...")
-    ok = _press_witty_button(press_duration)
-    if not ok:
-        # Absolute last resort (should rarely be needed)
-        logging.warning("Falling back to OS shutdown because GPIO press failed.")
-        system("shutdown now -h")
+        # Copy current RTC time (registers 58-61) to ALARM2 (registers 32-35)
+        for i in range(4):
+            current_value = bus.read_byte_data(0x08, 58 + i)
+            bus.write_byte_data(0x08, 32 + i, current_value)
+        
+        print("Witty Pi shutdown triggered!")
+    finally:
+        bus.close()
 
 
 if __name__ == "__main__":

@@ -515,6 +515,7 @@ def main():
 
         config['image_taken_today'] = False
         config['startup_time'] = 1
+        config['boot_count'] = 0
         set_startup_time(test_mode, 0)
         update_config_file(config)
         should_stay_on = trap_status.get("stay_on")

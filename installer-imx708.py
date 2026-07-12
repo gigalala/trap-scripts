@@ -17,7 +17,9 @@ never leaves the trap running and draining the battery. Progress is written
 to /home/pi/install.log. Run manually with --no-shutdown while debugging.
 """
 
+import json
 import logging
+import os
 import random
 import string
 import subprocess
@@ -31,6 +33,7 @@ INSTALL_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless
 LOG_FILE = '/home/pi/install.log'
 TOKEN_FILE = '/home/pi/token.db'
 DONE_FILE = '/home/pi/install.done'
+BOOT_SETUP_FILE = '/boot/firmware/trap-setup.json'
 
 CONNECTIVITY_SLEEP = 6          # seconds between connectivity checks
 CONNECTIVITY_ATTEMPTS = 100     # ~10 minutes
@@ -190,8 +193,77 @@ def shutdown():
     subprocess.run(['sudo', 'shutdown', '-h', 'now'])
 
 
+def apply_boot_setup():
+    """Apply optional per-card config written by the flasher UI to the FAT32
+    boot partition (the only partition macOS can write). Supports selecting
+    Wi-Fi and timezone at flash time without rebuilding the image.
+
+    File format (trap-setup.json): {"ssid": ..., "psk": ..., "country": "IL",
+    "timezone": "Asia/Jerusalem"}. The file is deleted after use because it
+    contains the Wi-Fi password. All failures are non-fatal: the trap falls
+    back to the Wi-Fi/timezone baked into the golden image."""
+    if not os.path.exists(BOOT_SETUP_FILE):
+        logging.info('No trap-setup.json - using baked-in Wi-Fi/timezone')
+        return
+    try:
+        with open(BOOT_SETUP_FILE) as f:
+            setup = json.load(f)
+    except Exception:
+        logging.exception('trap-setup.json is unreadable, ignoring it')
+        return
+    logging.info('Applying boot setup: ssid=%s country=%s timezone=%s',
+                 setup.get('ssid'), setup.get('country'), setup.get('timezone'))
+
+    timezone = setup.get('timezone')
+    if timezone:
+        try:
+            subprocess.run(['sudo', 'timedatectl', 'set-timezone', timezone],
+                           check=True, timeout=30)
+            logging.info('Timezone set to %s', timezone)
+        except Exception:
+            logging.exception('Failed to set timezone %s', timezone)
+
+    country = setup.get('country')
+    if country:
+        try:
+            subprocess.run(['sudo', 'raspi-config', 'nonint', 'do_wifi_country', country],
+                           check=True, timeout=60)
+            logging.info('Wi-Fi country set to %s', country)
+        except Exception:
+            logging.exception('Failed to set Wi-Fi country %s', country)
+
+    ssid, psk = setup.get('ssid'), setup.get('psk')
+    if ssid and psk:
+        con_name = 'trap-setup-wifi'
+        try:
+            # Idempotent: replace any previous connection created by this hook.
+            subprocess.run(['sudo', 'nmcli', 'connection', 'delete', con_name],
+                           capture_output=True, timeout=30)
+            subprocess.run(['sudo', 'nmcli', 'connection', 'add',
+                            'type', 'wifi', 'con-name', con_name, 'ifname', 'wlan0',
+                            'ssid', ssid,
+                            'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', psk,
+                            'connection.autoconnect', 'yes',
+                            'connection.autoconnect-priority', '10'],
+                           check=True, timeout=60)
+            logging.info('Wi-Fi connection added for SSID %s (priority over baked-in)', ssid)
+            # Best-effort immediate connect; autoconnect covers failure.
+            subprocess.run(['sudo', 'nmcli', 'connection', 'up', con_name],
+                           capture_output=True, timeout=90)
+        except Exception:
+            logging.exception('Failed to add Wi-Fi connection for %s', ssid)
+
+    try:
+        subprocess.run(['sudo', 'rm', '-f', BOOT_SETUP_FILE], check=True, timeout=30)
+        subprocess.run(['sync'], timeout=30)
+        logging.info('trap-setup.json removed (contains Wi-Fi password)')
+    except Exception:
+        logging.exception('Failed to remove trap-setup.json')
+
+
 def run_installer():
     logging.info('=================== PHASE-1 INSTALLER START ===================')
+    apply_boot_setup()
     if not wait_for_internet():
         mark_done('failed-no-internet')
         return

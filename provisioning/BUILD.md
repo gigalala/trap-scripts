@@ -78,8 +78,23 @@ Verify, in `trap.log` and the app:
 build password, restores the installer crontab, and removes the Mac's SSH
 key so clones don't trust this machine.
 
-Optional shrink (needs Linux/WSL/Docker): PiShrink on the raw `.img`
-before gzip. Not required — gzip already collapses the empty space.
+Shrink the captured image with `./shrink-image.sh <image.img.gz>` (PiShrink
+in a Colima/Docker container; needs `brew install colima docker`). The shrunk
+image flashes to any card >= ~4GB in minutes and auto-expands on first boot.
+
+## Per-card Wi-Fi/timezone (`trap-setup.json`)
+
+The phase-1 installer applies an optional `trap-setup.json` from the FAT32
+boot partition before doing anything else:
+
+```json
+{"ssid": "...", "psk": "...", "country": "IL", "timezone": "Asia/Jerusalem"}
+```
+
+It adds the Wi-Fi as a higher-priority NetworkManager connection (the
+baked-in network stays as fallback), sets the Wi-Fi country and timezone,
+then deletes the file (it contains a password). The dev-team flasher UI in
+`../../trap-flasher/` writes this file automatically after flashing.
 
 ## Part B — Installing each new trap (the two phases)
 

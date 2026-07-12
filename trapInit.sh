@@ -1,9 +1,13 @@
 #!/bin/bash
-# VERSION = 2.1
+# VERSION = imx708-3.0
+# Field config tool for IMX708 (12MP) traps on Bookworm.
+# Installation is handled by the golden image + installer-imx708.py
+# (auto install-candidate on first boot), so there is no "install
+# new trap" option here - only mode/token/camera utilities.
 
 show_witty_stats(){
     if [ ! -f /home/pi/wittypi/wittyPi.sh ]; then
-        return 
+        return
     fi
     printf "${red}*************************************************************************\n${nc}"
     echo -e "13\n"  | sudo sh /home/pi/wittypi/wittyPi.sh | while read line; do
@@ -31,6 +35,28 @@ set_dummy_load(){
 EOF
 }
 
+test_camera(){
+    echo 'Testing 12MP IMX708 camera (rpicam-still)...'
+    if rpicam-still -n -t 2000 -o /home/pi/camera-test.jpg; then
+        echo 'Camera OK - test image saved to /home/pi/camera-test.jpg'
+        return 0
+    else
+        echo '!!! Camera test FAILED !!!'
+        echo 'Check the ribbon cable (Pi Zero needs the small-connector end),'
+        echo 'then try adding "dtoverlay=imx708" under [all] in /boot/firmware/config.txt and reboot.'
+        return 1
+    fi
+}
+
+test_sht30(){
+    echo 'Probing SHT30 temp/humidity sensor on I2C (addr 0x44)...'
+    if sudo i2cdetect -y 1 | grep -q "44"; then
+        echo 'SHT30 detected'
+    else
+        echo 'SHT30 not detected (sensor is optional - check wiring if one is attached)'
+    fi
+}
+
 if (( $EUID == 0 )); then
     echo "Please do NOT run as root (no sudo)"
     exit
@@ -41,117 +67,22 @@ red='\033[0;31m'
 lblue='\033[1;34m'
 nc='\033[0m' # No Color
 
-printf "${yellow}Hello, welcome to traps installer/config tool\n${nc}"
+printf "${yellow}Hello, welcome to traps config tool (IMX708 12MP)\n${nc}"
 show_witty_stats
 echo would you like to:
-echo '1) install new trap'
-if test -f "trap-daily.py"; then
-    echo '2) activate production mode'
-    echo '3) activate test mode'
-    echo '4) clean schedulers'
-    echo '5) new token'
-    echo '6) revoke token'
-    echo '7) focus camera'
-fi
-    echo 'any other key to exit'
+echo '2) activate production mode'
+echo '3) activate test mode'
+echo '4) clean schedulers'
+echo '5) new token'
+echo '6) revoke token'
+echo '7) test camera'
+echo '8) test temp/humidity sensor'
+echo 'any other key to exit'
 
 
 read option
 
-if [[ "$option" == 1 ]] ;then
-    while true; do
-        read -p "Is it a five mega pixel camera? (y/n) " yn
-        if [[ "$yn" == 'y' ]]; then echo "true" > /home/pi/camera.db; break; fi
-        if [[ "$yn" == 'n' ]]; then echo "false" > /home/pi/camera.db; break; fi
-    done
-    uid=$(cat /proc/cpuinfo | grep Serial | cut -d ' ' -f 2)
-    password=$(openssl rand -hex 8)
-    token=$(openssl rand  -hex 500)
-    echo 'Setting timezone'
-    sudo timedatectl set-timezone Asia/Jerusalem
-    echo date
-    echo 'Shutting Down HDMI for battery improvements'
-    sudo /opt/vc/bin/tvservice -o
-    echo 'Installing new trap'
-    #Downloading files
-    echo 'Downloading files'
-    echo "Downloading schedules"
-    echo 'Downloading image scripts'
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/takePic.sh' -O takePic.sh
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/new-witty/trap-daily.py' -O trap-daily.py
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/response_actions.py' -O response_actions.py
-
-    #install pip and and python modules 
-    echo 'Getting pip and python modules if needed'
-    sudo apt-get update
-    sudo apt install git
-    echo "y\n" | sudo apt install python-pip
-    echo "y\n" | sudo apt install python-opencv
-    sudo pip install picamera
-    sudo pip install requests
-    
-
-    #Enable camera
-    echo 'Enabling camera'
-    sudo raspi-config nonint do_camera 0
-
-    #Downloading autofocus software
-    echo 'Downloading autofocus software'
-    git clone https://github.com/ArduCAM/RaspberryPi.git --branch legacy_version
-
-    wget -4 'https://raw.githubusercontent.com/gigalala/trap-scripts/main/Autofocus.py' -O Autofocus.py
-
-    #Disable auto-login
-    echo 'Disable auto-login if exisits in system'
-    sudo sed -i.backup '/autologin-user=/d' /etc/lightdm/lightdm.conf
-
-    #Adding startup script to corntab
-    echo 'Add startup script'
-    crontab -l | { cat; echo "@reboot sudo sh /home/pi/takePic.sh"; } | crontab -
-
-    #Change password
-    echo 'Changing password'
-    printf 'raspberry\n%s\n%s\n' "$password" "$password" | passwd
-
-    #Download and install Witty Pi software
-    echo 'Downloading Witty pi software'
-#    read -p "Install new witty pi 4? (y/n) " yn
-#    if [[ "$yn" == 'y' ]]; then
-    wget http://www.uugear.com/repo/WittyPi4/install.sh
-    echo "true" > /home/pi/new_witty.db
-    echo 'Install new Witty pi 4 Software'
-#    break; fi
-#    elif [[ "$yn" == 'n' ]]; then
-#      wget http://www.uugear.com/repo/WittyPi3/install.sh
-#      echo 'Install old Witty pi 3 software'
-#    break; fi
-    sudo sh install.sh
-#    echo 'adding GPIO-4 fix to wittyPi/daemon.sh'
-#    sudo sed -i '119d' wittypi/daemon.sh # dansker
-#    sed -i '119iwhile [ $counter -lt 20]; do' wittypi/daemon.sh #dansker
-
-    printf "${red}*************************************************************************\n"
-    printf "${red}***********************!!!IMPORTANT DEVICE DATA!!!***********************\n"
-    printf "${red}*************************************************************************\n\n"
-
-    printf "${yellow}PASSWORD\n${nc}$password\n\n"
-    printf "${yellow}UID\n${nc}$uid\n\n"
-    printf "${yellow}TOKEN\n${nc}$token\n\n"
-
-    printf "${red}*************************************************************************\n\n${nc}"
-
-
-    echo 'saving token'
-    echo "${token}" > /home/pi/token.db
-    echo 'Done.........';
-    echo 'Rebooting'
-    cd RaspberryPi/Motorized_Focus_Camera
-    sudo chmod +x enable_i2c_vc.sh
-    sudo ./enable_i2c_vc.sh &> /dev/null <<EOF
-    y
-EOF
-
-elif [[ "$option" == 2 ]]; then
+if [[ "$option" == 2 ]]; then
     echo 'Setting production mode'
     echo "false" > /home/pi/testMode.db
     sudo sh wittypi/wittyPi.sh &> /dev/null <<EOF
@@ -161,7 +92,7 @@ elif [[ "$option" == 2 ]]; then
     11
 EOF
     read -p "Should set Dummy load? (y/n) " yn
-    if [[ "$yn" == 'y' ]]; then set_dummy_load; break; fi
+    if [[ "$yn" == 'y' ]]; then set_dummy_load; fi
     show_witty_stats
     echo 'Done.........';
 
@@ -169,35 +100,15 @@ elif [[ "$option" == 3 ]]; then
     echo 'Setting test mode '
     echo "true" > /home/pi/testMode.db
     echo "Setting new witty pi 4 to test mode"
-#    read -p "Is this the new witty pi 4? (y/n) " yn
-#    if [[ "$yn" == 'y' ]]; then
     sudo sh wittypi/wittyPi.sh &> /dev/null  <<EOF
     6
     1
     13
 EOF
-#    if [[ "$yn" == 'n' ]]; then
-#      startup=??
-#      while true; do
-#          read -p "daily startup? (y/n) " yn
-#          if [[ "$yn" == 'y' ]]; then
-#            startup=08
-#            break;
-#          fi
-#          if [[ "$yn" == 'n' ]]; then
-#            break;
-#          fi
-#      done
-#      sudo sh wittypi/wittyPi.sh &> /dev/null  <<EOF
-#      5
-#      ?? $startup:00:00
-#      1
-#      11
-read -p "Should set Dummy load? (y/n) " yn
-if [[ "$yn" == 'y' ]]; then set_dummy_load; break; fi
-
-show_witty_stats
-echo 'Done.........';
+    read -p "Should set Dummy load? (y/n) " yn
+    if [[ "$yn" == 'y' ]]; then set_dummy_load; fi
+    show_witty_stats
+    echo 'Done.........';
 
 elif [[ "$option" == 4 ]]; then
     echo 'Cleaning schdeulers'
@@ -228,10 +139,13 @@ elif [[ "$option" == 6 ]]; then
     echo  > /home/pi/token.db
     echo 'Token revoked'
     echo 'Done.........';
+
 elif [[ "$option" == 7 ]]; then
-    echo 'Focusing camera'
-    cd RaspberryPi/Motorized_Focus_Camera/python
-    sudo python Autofocus.py
+    test_camera
+    echo 'Done.........';
+
+elif [[ "$option" == 8 ]]; then
+    test_sht30
     echo 'Done.........';
 fi
 echo 'Bye :)'

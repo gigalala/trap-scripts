@@ -8,6 +8,10 @@ LOG_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/tra
 STATUS_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_status'
 RUN_TIME_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_run_time'
 
+# OTA self-update default: IMX708 (12MP) traps must pull the libcamera-based
+# code, never 'main' (which is the legacy picamera stack).
+DEFAULT_BRANCH = 'imx708-voltic-daily'
+
 
 def change_battery():
     return -1
@@ -23,10 +27,8 @@ def send_log(token, trap_id, delete=False):
         os.remove('trap.log')
     return res.status_code
 
-def update(version='main'):
-    branch = None
-    if version:
-        branch = version
+def update(version=DEFAULT_BRANCH):
+    branch = version if version else DEFAULT_BRANCH
     system('rm -rf trap-scripts')
     response_code = system('git clone --branch ' + branch + " " + GITHUB_URL)
     system('mv trap-scripts/* .')

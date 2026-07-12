@@ -6,16 +6,30 @@ from os import path
 from os import system
 import os
 from response_actions import change_battery, stay_on, update, send_log, get_trap_status, send_run_time
-from Autofocus import get_focus
-from picamera import PiCamera
-from ctypes import *
 import time
 import logging
 import subprocess
 import json
-# import trap
 
-FOCUS_VAL = 295
+# ============================================================
+# IMX708 (12MP, Camera Module 3) / libcamera - Python 3, Bookworm.
+# Derived from the new-witty-voltic-daily-10 branch; only the
+# camera layer changed: picamera + Arducam VCM -> rpicam-still.
+# The IMX708 has built-in autofocus, so Autofocus.py/camera.db
+# are gone. Optional SHT30 temp/humidity sensor is read over I2C
+# and logged (no server upload yet).
+# ============================================================
+
+CAMERA_CMD = 'rpicam-still'
+CAMERA_RES = (4608, 2592)  # IMX708 full resolution
+CAMERA_WAIT_MS = 5000      # preview time, lets AE/AWB/AF converge
+CAMERA_TIMEOUT = 90        # seconds before giving up on the capture process
+# Lens position is in dioptres (0 = infinity, ~2 = 50cm, ~10 = 10cm).
+# Legacy VCM focus values (10-1000) stored in trap_focus.db are out of
+# range and fall back to autofocus.
+MAX_LENS_POSITION = 32
+
+SHT30_I2C_ADDR = 0x44  # FS400-SHT30 default address (0x45 if ADDR pin high)
 
 FAIL_REBOOT_ATTEMPTS = 1
 REBOOT_TIME = 120  # 2 minutes
@@ -53,31 +67,25 @@ def get_serial():
     return cpu_serial
 
 
-def get_camera_type():
-    camera_five = None
-    if path.exists('camera.db'):
-        file = open('camera.db', "r")
-        camera_five = file.read().strip()
-        file.close()
-        if not camera_five:
-            return None
-    return camera_five == "true"
-
-
-def get_focus_value(should_focus=False):
-    focus = FOCUS_VAL
-    if should_focus:
-        focus = get_focus()
-        logging.info("using auto-focus. value for auto is: " + str(focus))
-        update_trap_data("trap_focus.db", focus)
-        return focus
-    if path.exists('trap_focus.db'):
-        file = open('trap_focus.db', "r")
-        focus = file.read().strip()
-        file.close()
-        if not focus:
-            return None
-    return int(focus)
+def get_lens_position():
+    """Manual lens position (dioptres) from trap_focus.db, or None for
+    the IMX708's built-in autofocus."""
+    if not path.exists('trap_focus.db'):
+        return None
+    with open('trap_focus.db', 'r') as file:
+        raw = file.read().strip()
+    if not raw:
+        return None
+    try:
+        value = float(raw)
+    except ValueError:
+        logging.warning("Invalid trap_focus.db value: " + raw)
+        return None
+    if value < 0 or value > MAX_LENS_POSITION:
+        logging.warning("trap_focus.db value " + str(value) +
+                        " out of lens-position range (legacy VCM value?), using autofocus")
+        return None
+    return value
 
 
 def get_token():
@@ -123,7 +131,7 @@ def get_trap_version():
         version = file.read().strip()
         if version:
             return version
-    return "main"
+    return "imx708-voltic-daily"
 
 
 def get_trap_boot_data_config():
@@ -152,28 +160,55 @@ def write_trap_boot_data(boot_count, run_time, startup_time, image_taken_today):
     file.close()
 
 
-def take_pic(trap_status):
-    is_five_mega = get_camera_type()
-    focus_value = get_focus_value(trap_status.get("auto_focus"))
-    logging.info("Starting camera process with - " + (
-        "5 mega pixel." if is_five_mega else "8 mega pixel.") + " with focus value:" + str(focus_value))
-    camera_res = (2592, 1944)
-    if not is_five_mega:
-        camera_res = (3280, 2464)  # Motorized 5/8mp line
-    arducam_vcm = CDLL('./RaspberryPi/Motorized_Focus_Camera/python/lib/libarducam_vcm.so')  # Motorized 5/8mp line
-    arducam_vcm.vcm_init()  # Motorized 5/8mp line
-    camera = PiCamera()
+def read_sht30():
+    """Single-shot SHT30 measurement. Returns (temp_c, humidity) or None.
+    The sensor is optional - any error is logged and swallowed."""
+    bus = None
     try:
-        camera.resolution = (camera_res[0], camera_res[1])
-        arducam_vcm.vcm_write(focus_value)  # Motorized 5/8mp line
-        time.sleep(2)  # Motorized 5/8mp line
-        camera.capture("latest.jpg")
-    except Exception:
-        camera.close()
-        logging.exception('Failed to take a picture')
+        bus = smbus.SMBus(1)
+        # Single-shot, high repeatability, clock stretching disabled (0x24 0x00)
+        bus.write_i2c_block_data(SHT30_I2C_ADDR, 0x24, [0x00])
+        time.sleep(0.05)
+        data = bus.read_i2c_block_data(SHT30_I2C_ADDR, 0x00, 6)
+        raw_temp = (data[0] << 8) | data[1]
+        raw_hum = (data[3] << 8) | data[4]
+        temp_c = -45 + (175 * raw_temp / 65535.0)
+        humidity = 100 * raw_hum / 65535.0
+        return round(temp_c, 2), round(humidity, 2)
+    except Exception as e:
+        logging.info("SHT30 sensor not available (" + str(e) + ")")
+        return None
+    finally:
+        if bus:
+            bus.close()
+
+
+def log_environment():
+    reading = read_sht30()
+    if reading:
+        logging.info("SHT30 reading - temperature=" + str(reading[0]) +
+                     "C humidity=" + str(reading[1]) + "%")
+
+
+def take_pic(trap_status):
+    lens_position = None if trap_status.get("auto_focus") else get_lens_position()
+    cmd = [CAMERA_CMD, '-n', '-t', str(CAMERA_WAIT_MS),
+           '--width', str(CAMERA_RES[0]), '--height', str(CAMERA_RES[1]),
+           '-o', 'latest.jpg']
+    if lens_position is None:
+        cmd += ['--autofocus-on-capture']
+        logging.info("Starting 12MP camera capture with autofocus")
     else:
-        camera.close()
-        logging.info("Image taken and saved")
+        cmd += ['--autofocus-mode', 'manual', '--lens-position', str(lens_position)]
+        logging.info("Starting 12MP camera capture with lens position: " + str(lens_position))
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=CAMERA_TIMEOUT)
+        if result.returncode != 0:
+            logging.error('Failed to take a picture: ' + str(result.stderr))
+        else:
+            logging.info("Image taken and saved")
+    except Exception:
+        logging.exception('Failed to take a picture')
 
 
 def wait_for_connectivity(start_of_run, pre_config):
@@ -195,7 +230,7 @@ def set_and_run_new_witty_startup(startup_script):
     with open('wittypi/schedule.wpi', 'w') as file:
         file.write(startup_script)
     os.chdir("wittypi")
-    p = subprocess.Popen(['bash', 'runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    p = subprocess.Popen(['bash', 'runScript.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     stdout, stderr = p.communicate()
     os.chdir("/home/pi")
     logging.info(stdout)
@@ -211,26 +246,21 @@ def set_startup_time(is_test, start_index):
         else:
             set_and_run_new_witty_startup(EVERY_2_HOUR_SCRIPT)
     else:
-        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
         start = STARTUP_TIMES[start_index]
         command = "5\n?? " + start + "\n11\n"
         stdout, stderr = p.communicate(input=command)
-        # for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
-        #     if line.startswith(">>>"):
-        #         logging.info(line[4:])
-        #     elif line.strip().startswith("4.") or line.strip().startswith("5."):
-        #         logging.info(line[14:])
         logging.info("Next startup time set to: " + str(start))
 
 
 def set_dummy_load(remove_dummy_load):
     if remove_dummy_load is None:
-        logging.warn("Should update dummy load, but no dummy load in request")
+        logging.warning("Should update dummy load, but no dummy load in request")
         return
     dummy_load = 0 if remove_dummy_load else 25
     logging.info("Attempting to update dummy load to: " + str(dummy_load))
     try:
-        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
         command = "9\n 5\n" + str(dummy_load) + "\n11"
         stdout, stderr = p.communicate(input=command)
     except Exception as e:
@@ -282,19 +312,19 @@ def configure_logging(logging):
 
 def update_trap_data(db, data):
     my_file = open(db, "w")
-    logging.info("Writing to :" + db +". with value: " + str(data))
+    logging.info("Writing to :" + db + ". with value: " + str(data))
     my_file.write(str(data))
     my_file.close()
 
 
 def send_image(token, trap_id, test_mode, startup_index, boot_count, config):
     with open('latest.jpg', "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
     image_name = datetime.now().strftime("%d-%m-%Y-%H_%M") + ".jpg"
     run_time = get_trap_boot_data("run_time", config)
     number_of_boots = startup_index * FAIL_REBOOT_ATTEMPTS + boot_count
     body = {'image': encoded_string, 'trapId': trap_id, 'imageName': image_name, 'testMode': test_mode,
-            'runTime': run_time , 'numberOfBoots': number_of_boots}
+            'runTime': run_time, 'numberOfBoots': number_of_boots}
     headers = {"Authorization": "Bearer " + token}
     logging.info('Attempting to send Image')
     return requests.post(URL, data=body, headers=headers, timeout=120)
@@ -329,6 +359,9 @@ def update_trap_db_status(trap_status):
     if trap_status.get("test_mode") is not None:
         update_trap_data("testMode.db", trap_status.get("test_mode"))
     if trap_status.get("focus"):
+        # NOTE: focus is now a libcamera lens position in dioptres
+        # (0 = infinity, ~2 = 50cm, ~10 = 10cm). Legacy VCM values
+        # (10-1000) are ignored by get_lens_position() -> autofocus.
         update_trap_data("trap_focus.db", trap_status.get("focus"))
 
 
@@ -389,8 +422,8 @@ def update_trap_version(trap_status):
                 logging.error('Failed to update version: ' + requested_version)
         else:
             update()
-            update_trap_data('release_version.db', 'main')
-            logging.info("Trap updated to default version 'main'")
+            update_trap_data('release_version.db', 'imx708-voltic-daily')
+            logging.info("Trap updated to default version 'imx708-voltic-daily'")
 
 
 def safe_send_runtime(token, serial, overall_run_time):
@@ -435,7 +468,7 @@ def attempt_get_trap_status(token, serial):
 
 def set_emergency_shutdown():
     logging.info('Setting pre-run emergency shutdown to - ??:15')
-    p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     command = "5\n?? ??:15 \n11\n"
     p.communicate(input=command)
 
@@ -453,10 +486,11 @@ def update_time_by_network():
     is_new_witty = get_witty_type()
     if is_new_witty:
         logging.info("New witty pi, updating RTC clock by network")
-        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        p = subprocess.Popen(['sh', 'wittypi/wittyPi.sh'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
         command = "3\n " + "\n13\n"
         stdout, stderr = p.communicate(input=command)
-        for line in stdout.splitlines()[len(stdout.splitlines()) / 2:]:
+        lines = stdout.splitlines()
+        for line in lines[len(lines) // 2:]:
             if line.startswith(">>>"):
                 logging.info(line[4:])
             elif line.strip().startswith("4.") or line.strip().startswith("5."):
@@ -476,6 +510,7 @@ def main():
         token, serial = get_trap_base_data()
         logging.info('TRAP-ID:' + str(serial))
         logging.info('TRAP-VERSION: ' + str(get_trap_version()))
+        log_environment()
         if not validate_trap_base_data(token, serial):
             return
         pre_config = get_trap_boot_data_config()
@@ -553,13 +588,13 @@ def main():
 def shutdown_witty_pi():
     """Set shutdown alarm to current RTC time (triggers immediately)"""
     bus = smbus.SMBus(1)
-    
+
     try:
         # Copy current RTC time (registers 58-61) to ALARM2 (registers 32-35)
         for i in range(4):
             current_value = bus.read_byte_data(0x08, 58 + i)
             bus.write_byte_data(0x08, 32 + i, current_value)
-        
+
         print("Witty Pi shutdown triggered!")
     finally:
         bus.close()

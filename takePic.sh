@@ -1,3 +1,3 @@
-#!binsh
+#!/bin/sh
 cd /home/pi
-sudo python trap-daily.py
+sudo python3 trap-daily.py

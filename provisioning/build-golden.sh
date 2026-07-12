@@ -109,6 +109,8 @@ cd /home/pi
 echo '--- Removing per-device state'
 rm -f token.db trap.data trap.log install.log install.done latest.jpg camera-test.jpg trap_focus.db release_version.db
 > testMode.db
+echo '--- Removing witty test schedules/logs (witty settings live on the HAT, not the card)'
+rm -f wittypi/schedule.wpi wittypi/wittyPi.log wittypi/schedule.log
 echo '--- Restoring installer crontab'
 crontab -r 2>/dev/null || true
 echo "@reboot python3 /home/pi/installer-imx708.py" | crontab -

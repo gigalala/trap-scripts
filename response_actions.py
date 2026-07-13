@@ -3,7 +3,9 @@ import requests
 import time
 import os
 
-GITHUB_URL = 'https://github.com/gigalala/trap-scripts.git'
+# New development home. The legacy fleet still clones gigalala/trap-scripts
+# (kept as a frozen mirror of the legacy branches).
+GITHUB_URL = 'https://github.com/avihai-aharon/trap-scripts.git'
 LOG_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_log'
 STATUS_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_status'
 RUN_TIME_URL = 'https://us-central1-cameraapp-49969.cloudfunctions.net/serverless/trap_run_time'

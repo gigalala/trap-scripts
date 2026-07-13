@@ -75,5 +75,6 @@ Auth is `Bearer <token from token.db>`, validated against `trap_devices/{uid}.to
 - `shutdown_witty_pi()` talks raw I2C to the Witty Pi at address `0x08`; without the HAT attached it throws, so the Pi stays on (expected during phase 1 testing).
 - Witty Pi interactions are done by piping menu choices into `wittyPi.sh` heredocs — menu option numbers differ between Witty Pi 3 and 4; changing Witty Pi software versions silently breaks these.
 - Traps self-update from GitHub branches: pushing to a branch a deployed trap points at is a de-facto deploy.
+- Wake cadence is keyed to the server's `test_mode` flag (IMX708 branch): test mode = ~8-minute cycles (`TEST_SCHEDULE_SCRIPT`), production = daily. No more branch-per-schedule.
 - Default SSH credentials before phase 1 completes: `pi` / `raspberry`. After phase 1, the password is the generated one stored server-side with the install candidate.
 - Neighboring repos: `../scarecrow-traps-installer` is the **ESP32** (cellular) trap flasher — unrelated to Pi traps. `../trap-installer` holds golden images plus the newer IMX708/Bookworm scripts (libcamera/`rpicam-still` instead of `picamera` + Arducam VCM). `../trap-init-scripts` holds the first-boot `installer4.py` baked into legacy images.

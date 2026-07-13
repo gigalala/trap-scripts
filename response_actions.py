@@ -31,7 +31,12 @@ def update(version=DEFAULT_BRANCH):
     branch = version if version else DEFAULT_BRANCH
     system('rm -rf trap-scripts')
     response_code = system('git clone --branch ' + branch + " " + GITHUB_URL)
-    system('mv trap-scripts/* .')
+    if response_code == 0:
+        # Copy only the flat runtime files. The old `mv trap-scripts/* .`
+        # breaks on repeat updates once the branch contains directories
+        # (mv refuses to overwrite non-empty dirs like provisioning/).
+        system('cp -f trap-scripts/*.py trap-scripts/*.sh .')
+        system('rm -rf trap-scripts')
     return response_code
 
 def get_trap_status(token, trap_id):

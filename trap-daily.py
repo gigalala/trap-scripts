@@ -42,6 +42,11 @@ STARTUP_TIMES = ['11:00:00', '13:00:00', '15:00:00', '17:00:00', '19:00:00', '21
 
 EVERY_2_HOUR_SCRIPT = 'BEGIN  2016-08-05 00:00:00 \nEND    2030-07-31 23:59:59 \nON    M1 WAIT\nOFF   H1 M59'
 EVERY_DAY_SCRIPT = 'BEGIN 2015-08-01 10:00:00 \nEND   2030-07-31 23:59:59 \nON     H23 M59 WAIT\nOFF   M1'
+# Test-mode cadence: wake ~every 8 minutes (exact script from the legacy
+# every-15-min-new-witty branch). Selected automatically while the server
+# has test_mode on for this trap; flipping test mode off in the admin
+# returns the trap to the daily schedule on its next wakeup.
+TEST_SCHEDULE_SCRIPT = 'BEGIN 2015-08-01 12:00:00 \nEND   2030-07-31 23:59:59 \nON    M7 WAIT\nOFF   M1'
 
 
 def connected_to_internet(url='http://www.google.com/', timeout=10):
@@ -237,11 +242,11 @@ def set_and_run_new_witty_startup(startup_script):
 
 
 def set_startup_time(is_test, start_index):
-    # if is_test:
-    #     return
     is_new_witty = get_witty_type()
     if is_new_witty:
-        if start_index == 0:
+        if is_test:
+            set_and_run_new_witty_startup(TEST_SCHEDULE_SCRIPT)
+        elif start_index == 0:
             set_and_run_new_witty_startup(EVERY_DAY_SCRIPT)
         else:
             set_and_run_new_witty_startup(EVERY_2_HOUR_SCRIPT)
